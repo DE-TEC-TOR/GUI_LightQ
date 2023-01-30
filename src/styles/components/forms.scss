@@ -1,0 +1,122 @@
+// Generic styling
+.form-control:focus {
+  color: $hiQ_gray_hover;
+  background-color: white;
+  border-color: $hiQ_dis_green;
+  outline: none;
+  box-shadow: 0 0 0 0.2rem $hiQ_transp_green;
+}
+
+// Input type styling
+.form-input {
+  width: 100%;
+}
+
+/* Change Autocomplete styles in Chrome*/
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  border-color: $hiQ_dis_green;
+  -webkit-text-fill-color: $hiQ_gray_hover;
+  -webkit-box-shadow: 0 0 0px 1000px white inset;
+  box-shadow: 0 0 0px 1000px white inset;
+  background-color: $hiQ_hov_white !important;
+}
+
+// Select type styling
+.select_box {
+  font-size: 12px !important;
+  color: $hiQ_gray_hover;
+  vertical-align: middle;
+  flex-grow: 1;
+}
+
+.select_box_label {
+  font-size: 12px !important;
+  vertical-align: middle;
+  background-color: #068587;
+  color: #ffffff;
+  border: none;
+}
+
+.select_box_label_warning {
+  font-size: 12px !important;
+  vertical-align: middle;
+  background-color: red;
+  width: 100%;
+  color: #ffffff;
+  border: none;
+}
+
+.select_box_unit {
+  font-size: 12px !important;
+  vertical-align: middle;
+  border: none;
+}
+
+//Checkbox styling
+.checkbox-label {
+  display: block;
+  position: relative;
+  padding-left: 35px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.checkbox-label input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 25px;
+  width: 25px;
+  border-radius: 20%;
+  background-color: #eee;
+}
+
+/* When the checkbox is checked, add a blue background */
+.checkbox-label input:checked ~ .checkmark {
+  background-color: $hiQ_green;
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the checkmark when checked */
+.checkbox-label input:checked ~ .checkmark:after {
+  display: block;
+}
+
+/* Style the checkmark/indicator */
+.checkbox-label .checkmark:after {
+  left: 9px;
+  top: 5px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
