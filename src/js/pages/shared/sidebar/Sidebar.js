@@ -1548,7 +1548,7 @@ class Sidebar {
   }
 
   setHVStatus(val) {
-    this.hvStatus = parseInt(JSON.parse(val).type);
+    this.hvStatus = parseInt(val);
     this.components.status.hvStatus_ind.updateHV(val);
   }
 
@@ -1567,7 +1567,7 @@ class Sidebar {
         this.ntf.notifyError(error);
       } else {
         delta_time = getDeltaDate(
-          errorList[errorList.length - 1].time,
+          this.errorList[this.errorList.length - 1].time,
           error.time
         );
         if (delta_time > 8) {
@@ -1588,14 +1588,12 @@ class Sidebar {
     } else {
       if (flag_push) {
         this.errorList.push(error);
-        Util.notify(
-          "",
-          "INTERNAL ERROR! " +
-            error.message +
-            " DATA STREAM AUTOMATICALLY STOPPED",
-          "e",
-          0
-        );
+        // this.ntf.notify(
+        //   "INTERNAL ERROR! " +
+        //     error.message +
+        //     " DATA STREAM AUTOMATICALLY STOPPED",
+        //   "e"
+        // );
       }
       this.setControlUnitStatus(error.type);
       this.setDaqStatus(0);

@@ -31,10 +31,7 @@ class WebSocketDevice extends WebsocketController {
           this.watchdogUpdate(); // update last received watchdog time to keep connection open
           break;
         case "connected": //initialization connection check
-          wsActions.connected(
-            this.components.sidebar,
-            JSON.parse(msg.value).type
-          );
+          wsActions.connected(this.components.sidebar, msg.type);
           break;
         //----------------------------------------DAQ messages
         case "DAQ_end": //programmatic daq stop
@@ -147,7 +144,7 @@ class WebSocketDevice extends WebsocketController {
           break;
         //----------------------------------------system status messages
         case "fpga_hv": //update HV level status
-          wsActions.updateHVStatus(this.components.sidebar, msg.value);
+          wsActions.updateHVStatus(this.components.sidebar, msg.type);
           break;
         case "device_status": //update control unit status
           wsActions.updateDeviceStatus(
@@ -173,7 +170,9 @@ class WebSocketDevice extends WebsocketController {
           wsActions.updateCalibList(
             this.components.sidebar,
             msg.value,
-            "posCalib"
+            "posCalib",
+            "",
+            this.ntf
           );
           break;
         case "update_profile_calib_list_init": //update position calib file list and controller at page initialization
@@ -181,7 +180,8 @@ class WebSocketDevice extends WebsocketController {
             this.components.sidebar,
             msg.value,
             "posCalib",
-            "init"
+            "init",
+            this.ntf
           );
           break;
         //----------------------------------------CALIBRATION PAGE messages
@@ -190,7 +190,8 @@ class WebSocketDevice extends WebsocketController {
             this.components.sidebar,
             msg.value,
             "posCalib",
-            "modal"
+            "modal",
+            this.ntf
           );
           break;
         case "load_profile_calib": //load profile calibration factors from file on screen
@@ -202,31 +203,34 @@ class WebSocketDevice extends WebsocketController {
           break;
         //----------------------------------------background messages
         case "save_background":
-          alertify.success("Background acquisition completed", 2);
+          this.ntf.notify("Background acquisition completed", "s");
           wsActions.saveBackground(this.components.sidebar, msg.value);
           break;
         case "background_files_saved": //feedback after successful saving of background files
-          alertify.success("Background acquisition succesfully saved", 2);
+          this.ntf.notify("Background acquisition succesfully saved", "s");
           break;
         case "update_background_list": //update background file list and open modal
           wsActions.updateBackgroundList(
             this.components.sidebar,
             msg.value,
-            "modal"
+            "modal",
+            this.ntf
           );
           break;
         case "update_background_list_hidden": //update background file list
           wsActions.updateBackgroundList(
             this.components.sidebar,
             msg.value,
-            "hidden"
+            "hidden",
+            this.ntf
           );
           break;
         case "update_background_list_init": //update background file list and controller at the page initialization
           wsActions.updateBackgroundList(
             this.components.sidebar,
             msg.value,
-            "init"
+            "init",
+            this.ntf
           );
           break;
         //----------------------------------------operation messages
@@ -253,7 +257,7 @@ class WebSocketDevice extends WebsocketController {
           wsActions.warning(this.components.sidebar, msg.value);
           break;
         case "trigger_error": //trigger an error and update the GUI error list
-          wsActions.error(this.components.sidebar, msg.value);
+          wsActions.error(this.components.sidebar, msg.value, this.ntf);
           break;
         //----------------------------------------logbook/data-calib storage messages
         case "profile_run_list": //open profile files modal
@@ -264,16 +268,16 @@ class WebSocketDevice extends WebsocketController {
           );
           break;
         case "run_saved": //feedback after succesful data file saving
-          alertify.success("Run successfully saved", 2);
+          this.ntf.notify("Run successfully saved", "s");
           break;
         case "notes_file_edited": //feedback after succesful notes file editing
-          alertify.success("Notes file successfully edited", 2);
+          this.ntf.notify("Notes file successfully edited", "s");
           break;
         case "file_deleted": //feedback after succesful data file removal
-          alertify.error("Data deleted from memory", 2);
+          this.ntf.notify("Data deleted from memory", "e");
           break;
         case "calibration_saved": //feedback after succesful calibration file saving
-          alertify.success("Calibration successfully saved", 2);
+          this.ntf.notify("Calibration successfully saved", "s");
           break;
         //----------------------------------------default case - message not recognized
         default:

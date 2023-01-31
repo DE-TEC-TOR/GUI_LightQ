@@ -13,4 +13,4 @@ export const ID_MAIN_CONTENT = "#main_content";
 export const DEBUG = false;
 
 // Websocket watchdog interval
-export const WATCHDOG_INTERVAL = 3000;
+export const WATCHDOG_INTERVAL = 500;

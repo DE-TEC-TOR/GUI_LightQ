@@ -12,7 +12,7 @@ import favicon from "../../images/LightQ.png";
 const device_configs = {
   devName: "LightQ",
   devID: "",
-  ws_address: "192.168.0.38",
+  ws_address: "192.168.0.31",
   ws_port: "6123",
   hasPos: true,
   hasInt: true,

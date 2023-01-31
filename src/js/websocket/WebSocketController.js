@@ -148,7 +148,7 @@ class WebsocketController {
    * @param msg
    * @param mute      Don't show user notify
    */
-  send(target, msg = null, mute = false) {
+  send(target, msg = null, def = null, type = 0, mute = false) {
     if (this._sck == null) {
       // if (!mute) Util.notify(null, 'No connection available!', 'e', 3);
       Util.log(
@@ -164,6 +164,8 @@ class WebsocketController {
     let preparedMsg = {
       action: target,
       value: msg,
+      default: def,
+      type: type,
     };
 
     let message = JSON.stringify(preparedMsg);
