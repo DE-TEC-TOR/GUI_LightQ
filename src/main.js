@@ -7,17 +7,18 @@
  * @version : 1.0.0
  *
  */
+import $ from "jquery";
 import "./styles/_main.scss";
 import * as bootstrap from "bootstrap";
+import { default as Notifier } from "./js/core/Notifier";
 import { default as configs } from "./js/shared/configs";
 import { default as WSD } from "./js/websocket/WebSocketDevice";
-import { notify } from "./js/core/Helpers";
 import { default as init } from "./js/mainPage";
 
-let ws = new WSD(configs);
+let ntf = new Notifier();
+let ws = new WSD(configs, ntf);
 ws.connect();
 
 $(document).ready(() => {
-  init(configs, ws);
-  notify("message", "i", 3);
+  init(configs, ntf, ws);
 });

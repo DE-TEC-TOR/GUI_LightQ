@@ -1,5 +1,5 @@
 // Main navigation bar
-#device_menu {
+#main-nav {
   background-color: white;
   background-image: url("../../src/images/bar_LightQ.png");
   background-position: bottom right;
@@ -28,7 +28,7 @@
 }
 
 /* Centered section inside the top navigation */
-.nav_centered a {
+.nav_centered {
   float: none;
   position: absolute;
   top: 50%;
@@ -38,12 +38,17 @@
 
 /* Responsive navigation menu - display links on top of each other instead of next to each other (for mobile devices) */
 @media screen and (max-width: 600px) {
-  .nav_centered a {
+  .nav_centered {
     position: relative;
     top: 0;
     left: 0;
     transform: none;
   }
+}
+
+.collapse-menu {
+  display: flex;
+  justify-content: space-between;
 }
 
 #device_menu .navbar-collapse .navbar-nav .nav-item .nav-link {
@@ -81,4 +86,8 @@
   color: white;
   background-color: $hiQ_green !important;
   border-color: $hiQ_green !important;
+}
+
+.manual-img {
+  cursor: pointer;
 }

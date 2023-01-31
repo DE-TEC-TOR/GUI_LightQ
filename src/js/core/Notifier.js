@@ -9,7 +9,7 @@ import alertify from "alertifyjs/build/alertify";
 import { default as Util } from "./Util";
 
 class Notifier {
-  static setup() {
+  constructor() {
     alertify.defaults.transition = "slide";
     alertify.defaults.theme.ok = "btn btn-success btn-sm";
     alertify.defaults.theme.cancel = "btn btn-danger";
@@ -19,11 +19,11 @@ class Notifier {
   /**
    * Notifier
    *
-   * @param title
    * @param msg
    * @param type      (e: error, w: warning, i: info)
+   * @param delay
    */
-  static notify(msg = "i", type = "i", delay = 0) {
+  notify(msg = "i", type = "i", delay = 0) {
     let _msg = Util.isValid(msg) ? msg : "";
     let _type = "";
     let _delay = Util.isValidNumber(delay) ? delay : 5;
@@ -45,6 +45,36 @@ class Notifier {
         break;
     }
     alertify.notify(_msg, _type, _delay);
+  }
+  //Notify connection error (Device not connected)
+  conn_error() {
+    this.notify("CONNECTION ERROR: no connection to the target device", "e", 5);
+  }
+  //Notify error to user
+  notifyError(error) {
+    if (error.type == "99") {
+      this.notify("WARNING! " + error.message, "w", 2);
+    } else {
+      this.notify("ERROR! " + error.message, "e", 2);
+    }
+  }
+  /**
+   * Ask for confirmation
+   *
+   * @param title
+   * @param msg
+   * @param callback success
+   * @param callback cancel
+   */
+  confirm(
+    title = "Confirm",
+    msg = "Confirm?",
+    success = () => {},
+    cancel = () => {}
+  ) {
+    let _msg = Util.isValid(msg) ? msg : "Confirm?";
+    let _title = Util.isValid(title) ? title : "Confirm";
+    alertify.confirm(_title, _msg, success, cancel);
   }
 }
 

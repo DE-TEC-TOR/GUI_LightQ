@@ -11,6 +11,7 @@ import favicon from "../../images/LightQ.png";
 //---------------------------------------------DETECTOR CONFIGS----------------------------------//
 const device_configs = {
   devName: "LightQ",
+  devID: "",
   ws_address: "192.168.0.38",
   ws_port: "6123",
   hasPos: true,

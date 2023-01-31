@@ -5,12 +5,11 @@
  * @company : DE.TEC.TOR. srl
  * @version : 1.0.0
  */
-import { notify } from "../../core/Helpers";
 export let list = {};
 
 const start_download = () => {
   document.getElementById("download_zip").click();
-  notify("Download ongoing ... Plese wait", "i", 3);
+  ntf.notify("Download ongoing ... Plese wait", "i", 3);
   document.getElementById("download_zip").remove();
   return;
 };

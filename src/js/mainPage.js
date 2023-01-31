@@ -14,22 +14,21 @@ import { default as MainSectionCalibration } from "./pages/monitor/mainSection/M
 import { default as Sidebar } from "./pages/shared/sidebar/Sidebar";
 import { default as Navbar } from "./pages/shared/navbar/Navbar";
 import { default as Modal } from "./components/modal/Modal";
-import manualImg from "../images/ISO_7010_M002.png";
 //
 
-export default function initMonitor(detector, ws) {
+export default function initMonitor(detector, notifier, ws) {
   initPageStyle(detector.favicon);
   //Create and Load modals
-  let modalBig = new Modal("modalBig", "big", false);
+  let modalBig = new Modal("modalBig", "big", true);
   modalBig.draw("body");
   let modalDefault = new Modal("modalDefault", "default", true);
   modalDefault.draw("body");
   //CREATE PAGE
   let page = new MonitorPage(detector.devName);
   //CREATE PAGE ELEMENTS
-  let mainSection = new MainSectionGraphs(detector, ws);
+  let mainSection = new MainSectionGraphs(detector, notifier, ws);
   mainSection.build();
-  let mainSectionCalib = new MainSectionCalibration(detector, ws);
+  let mainSectionCalib = new MainSectionCalibration(detector, notifier, ws);
   mainSectionCalib.build();
   let calibFields = {
     posXchannels: [],
@@ -43,6 +42,7 @@ export default function initMonitor(detector, ws) {
   let sidebar = new Sidebar(
     detector,
     modalBig,
+    notifier,
     ws,
     mainSection.getGraphs(),
     calibFields
@@ -50,7 +50,15 @@ export default function initMonitor(detector, ws) {
   sidebar.build();
   ws.registerComponent("sidebar", sidebar);
   ws.registerComponent("mainSectionGraphs", mainSection);
-  let navbar = new Navbar(detector, modalDefault, ws, page, manualImg);
+  const deviceImg = require(`../images/image_${detector.devName}.png`);
+  let navbar = new Navbar(
+    detector,
+    modalDefault,
+    notifier,
+    ws,
+    page,
+    deviceImg
+  );
   navbar.draw();
   //RENDER PAGE
   page.build(detector, sidebar, mainSection, mainSectionCalib);

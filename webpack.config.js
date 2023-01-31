@@ -15,6 +15,15 @@ module.exports = {
   mode: "development",
   module: {
     rules: [
+      {
+        test: require.resolve("jquery"),
+        use: [
+          {
+            loader: "expose-loader",
+            options: { exposes: ["$", "jQuery"] },
+          },
+        ],
+      },
       { test: /\.css$/, use: "css-loader" },
       { test: /\.ts$/, use: "ts-loader" },
       {
@@ -49,10 +58,4 @@ module.exports = {
       },
     ],
   },
-  plugins: [
-    new webpack.ProvidePlugin({
-      $: "jquery",
-      jQuery: "jquery",
-    }),
-  ],
 };

@@ -10,10 +10,11 @@ import WebsocketController from "./WebSocketController";
 import wsActions from "./webSocketActions";
 
 class WebSocketDevice extends WebsocketController {
-  constructor(detector) {
-    super(detector.ws_address, detector.ws_port, true);
+  constructor(detector, notifier) {
+    super(detector.ws_address, detector.ws_port, true, notifier);
     this.detector = detector;
     this.components = {};
+    this.ntf = notifier;
   }
 
   registerComponent(cat, comp) {

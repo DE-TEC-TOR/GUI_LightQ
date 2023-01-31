@@ -1,11 +1,14 @@
 /**
  * Device navbar menu -> for device integrated software
  *
- * @author : Mattia Fontana
- * @company : TORETDevices srl
+ * @author : MattF
+ * @company : DE.TEC.TOR. srl
  * @version : 1.0.0
  */
-import { conn_error } from "../../../core/Helpers";
+
+import manualImg from "../../../../images/ISO_7010_M002.png";
+import brandImg from "../../../../images/dett.png";
+import { default as version } from "../../../shared/version";
 
 const detConfigPlaceholders = [
   { id: "visu_manu", name: "Manufacturer", key: "manufacturer" },
@@ -40,7 +43,7 @@ const appendConfigs = (htmlEl, placeholds, configs) => {
             style: "text-align: right",
             id: el.id,
             disabled: true,
-            value: configs[el.key].value,
+            value: configs[el.key],
           })
         )
     );
@@ -49,7 +52,7 @@ const appendConfigs = (htmlEl, placeholds, configs) => {
 };
 
 class Navbar {
-  constructor(detConfig, modal, webSock, page, manualImg) {
+  constructor(detConfig, modal, notifier, webSock, page, brandImg) {
     this.detConfig = detConfig;
     this.daqStatus = 0;
     this.links = [];
@@ -57,20 +60,29 @@ class Navbar {
     this.ws = webSock;
     this.modal = modal;
     this.page = page;
-    this.manualImage = manualImg;
+    this.brandImage = brandImg;
+    this.ntf = notifier;
+  }
+
+  createDeviceLogo() {
+    const brand = document.createElement("img");
+    brand.setAttribute("width", "80");
+    brand.setAttribute("src", this.brandImage);
+    return brand;
   }
 
   composeBar() {
     const mainDiv = document.createElement("div");
-    mainDiv.classList.add("collapse", "navbar-collapse");
+    mainDiv.classList.add("collapse", "navbar-collapse", "collapse-menu");
     mainDiv.id = "navbarSupportedContent";
     const mainUl = document.createElement("ul");
     mainUl.classList.add("navbar-nav", "mr-auto");
     this.createNavItems().forEach((elem, idx) => {
       mainUl.appendChild(elem);
     });
-    mainUl.appendChild(this.createCenteredTitle());
+    // mainUl.appendChild(this.createCenteredTitle());
     mainDiv.appendChild(mainUl);
+    // mainDiv.appendChild(this.createBrandLogo());
     mainDiv.appendChild(this.createManualLink());
     return mainDiv;
   }
@@ -109,7 +121,6 @@ class Navbar {
       anchLink.classList.add("active");
     }
     anchLink.addEventListener("click", function () {
-      console.log(th.activeLink);
       if (th.daqStatus != 0) {
         alertify.warning(
           "You are trying to leave this page with an ongoing run. Stop the run before."
@@ -191,35 +202,55 @@ class Navbar {
     let spanEl = document.createElement("span");
     spanEl.classList.add("manual-img");
     let imgLink = document.createElement("img");
-    imgLink.src = this.manualImage;
+    imgLink.src = manualImg;
     imgLink.width = "60";
     spanEl.appendChild(imgLink);
     imgLink.addEventListener("click", function () {
       if (th.daqStatus != 0) {
-        alertify.warning("Run ongoing. Stop the run before.");
+        th.ntf.notify("Run ongoing. Stop the run before.", "w");
       } else {
-        if (th.ws.isConnected()) {
-          //Ask the device its config and show it in the modal --- see commented code below
-          //Http request to retrieve the detector config -> obtain the response back
-          fillDetectorConfigModal(response.config);
-          th.modal.show();
-        } else {
-          conn_error();
-        }
+        //display the device and software infos
+        th.fillDetectorConfigModal();
+        th.modal.show();
       }
     });
     return spanEl;
   }
 
-  fillDetectorConfigModal(config) {
+  createBrandLogo() {
+    let spanEl = document.createElement("span");
+    spanEl.classList.add("nav_centered");
+    let imgLogo = document.createElement("img");
+    imgLogo.src = brandImg;
+    imgLogo.width = "260";
+    spanEl.appendChild(imgLogo);
+    return spanEl;
+  }
+
+  fillDetectorConfigModal() {
     let modalBody = $("<div>", { class: "container" });
-    modalBody = appendConfigs(modalBody, detConfigPlaceholders, config);
-    this.modal.setTitle("Detector infos");
+    modalBody = appendConfigs(modalBody, detConfigPlaceholders, version);
+    this.modal.setTitle("Device infos");
     this.modal.setBody(modalBody);
+    let th = this;
+    this.modal.addButton(
+      "btn_read_manual",
+      "success",
+      "Read User Manual",
+      false,
+      function () {
+        window.open("manual_path", "resizeable,scrollbar");
+        th.modal.hide();
+      }
+    );
+    // DISMISS MODAL
+    this.modal.addButton("btn_close", "secondary", "Close", true);
   }
 
   draw() {
+    $("#nav-brand").append(this.createDeviceLogo());
     $("#device_menu").append(this.composeBar());
+    $("#main-nav").append(this.createBrandLogo());
   }
 }
 

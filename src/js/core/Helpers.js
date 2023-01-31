@@ -6,9 +6,6 @@
  * @company : DE.TEC.TOR. srl
  * @version : 1.0.0
  */
-import ntf from "./Notifier";
-ntf.setup();
-
 //---------------------------------------------PRODUCT/SOFTWARE VERSION----------------------------------//
 export function createVersionObject(devName, devID, rev) {
   return {
@@ -68,15 +65,6 @@ export function formatDate(date) {
     twoDigits(date.getSeconds())
   );
 }
-//Notify connection error (Device not connected)
-export function conn_error() {
-  ntf.notify("CONNECTION ERROR: no connection to the target device", "e", 5);
-}
-//Notification
-export function notify(message, mode, delay) {
-  ntf.notify(message, mode, delay);
-}
-
 export function getScript(url) {
   e = document.createElement("script");
   e.src = url;
@@ -102,14 +90,6 @@ export function initPageStyle(favicon, style) {
   // link.href = style; //To be defined in the Controller
   // // Append link element to HTML head
   // head.appendChild(link);
-}
-//Notify error to user
-export function notifyError(error) {
-  if (error.type == "99") {
-    ntf.notify("WARNING! " + error.message, "w", 2);
-  } else {
-    ntf.notify("ERROR! " + error.message, "e", 2);
-  }
 }
 //clear content of HTML container (div)
 export function clearDiv(elementID) {

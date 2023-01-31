@@ -7,13 +7,13 @@
  */
 import { WATCHDOG_INTERVAL } from "../core/Globals";
 import Util from "../core/Util";
-import { conn_error, getDeltaDate } from "../core/Helpers";
+import { getDeltaDate } from "../core/Helpers";
 
 class WebsocketController {
   /**
    * Webscoket controller constructor
    */
-  constructor(address = null, port = null, watchdog = false) {
+  constructor(address = null, port = null, watchdog = false, notifier = null) {
     this._reference = "Websocket";
     this._connected = false;
     this._address = Util.isValid(address) ? address : "";
@@ -31,6 +31,8 @@ class WebsocketController {
     this._connection_timer = null;
 
     this._sck = null;
+
+    this.ntf = notifier;
 
     Util.log("=> Websocket Inited!");
     Util.log(this._watchdog_enabled);
@@ -165,7 +167,6 @@ class WebsocketController {
     };
 
     let message = JSON.stringify(preparedMsg);
-    console.log(message);
     if (this._sck.readyState === this._sck.OPEN) {
       this._sck.send(message);
       Util.log("Message sent:");
@@ -176,7 +177,7 @@ class WebsocketController {
         getDeltaDate(this._watchdog_last_received, this._watchdog_last_sent) > 5
       ) {
         // Util.notify(this._reference, 'CONNECTION ERROR: no connection to the target device - ' + this._address, 'e', 0);
-        conn_error();
+        this.ntf.conn_error();
         this.disconnect();
         Util.trig("main_content", "disconnected");
       }
@@ -222,7 +223,7 @@ class WebsocketController {
         getDeltaDate(this._watchdog_last_received, this._watchdog_last_sent) > 5
       ) {
         // Util.notify(this._reference, 'CONNECTION ERROR: no connection to the target device - ' + this._address, 'e', 0);
-        conn_error();
+        this.ntf.conn_error();
         this.disconnect();
         Util.trig("main_content", "disconnected");
       }

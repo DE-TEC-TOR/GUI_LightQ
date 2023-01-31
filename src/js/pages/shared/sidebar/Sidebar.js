@@ -15,11 +15,9 @@ import CircleIndicator from "../../../components/indicators/CircleIndicator";
 import { GraphRound } from "../../../components/graphics/Graphs";
 import { Panel } from "../../../components/graphics/Panels";
 import {
-  conn_error,
   formatDate,
   validateNumInput,
   getDeltaDate,
-  notifyError,
 } from "../../../core/Helpers";
 import Loader from "../../../components/indicators/Loader";
 
@@ -34,10 +32,12 @@ class Sidebar {
   constructor(
     detConfig,
     modal,
+    notifier,
     webSock,
     pageGraphs,
     inputCalib = DEF_INPUT_CALIB
   ) {
+    this.ntf = notifier;
     this.detConfig = detConfig;
     this.devName = detConfig.devName;
     this.hasPos = detConfig.hasPos;
@@ -130,12 +130,8 @@ class Sidebar {
           th.ws.send("updateConfig", "init");
         } else {
           //alert if no connection and circular indicator set to 99 state
-          conn_error();
-          if (th.devName != "aQuracy") {
-            th.components.status.hvStatus_ind.update(99);
-          } else {
-            th.components.status.camStatus_ind.update(99);
-          }
+          th.ntf.conn_error();
+          th.components.status.hvStatus_ind.update(99);
           th.components.status.cuStatus_ind.update(99);
         }
       }, 1100);
@@ -157,17 +153,17 @@ class Sidebar {
     circ_device.handlerEvent("click", function () {
       if (th.ws.isConnected()) {
         if (circ_device.getState() == 0 && th.errorList.length == 0) {
-          alertify.success("Everything is fine!");
+          th.ntf.notify("Everything is fine!", "s");
           return;
         }
         if (circ_device.getState() == 99) {
-          alertify.error("No connection to the device");
+          th.ntf.notify("No connection to the device", "e");
           return;
         }
         th.fillErrorModal();
         th.modal.show();
       } else {
-        conn_error();
+        th.ntf.conn_error();
       }
     });
     this.components.status.cuStatus_ind = circ_device;
@@ -181,23 +177,23 @@ class Sidebar {
         if (th.ws.isConnected()) {
           switch (circ_hv.getState()) {
             case 0:
-              alertify.error("HV OFF");
+              th.ntf.notify("HV OFF", "e");
               break;
             case 1:
-              alertify.success("HV ON and in range");
+              th.ntf.notify("HV ON and in range", "s");
               break;
             case 2:
-              alertify.error("HV out of range");
+              th.ntf.notify("HV out of range", "e");
               break;
             case 99:
-              alertify.error("No connection to the device");
+              th.ntf.notify("No connection to the device", "e");
               break;
             default:
-              alertify.error("Internal anomaly. Call the manufacturer.");
+              th.ntf.notify("Internal anomaly. Call the manufacturer.", "e");
               break;
           }
         } else {
-          conn_error();
+          th.ntf.conn_error();
         }
       });
       this.components.status.hvStatus_ind = circ_hv;
@@ -283,7 +279,7 @@ class Sidebar {
         let pos_calib_switch = new Switch("pos_calib_switch", switch_text);
         pos_calib_switch.handlerEvent("click", function () {
           if (th.daqStatus == 1 || th.daqStatus == 2) {
-            alertify.warning("Data streaming or DAQ ongoing. Stop before!");
+            th.ntf.notify("Data streaming or DAQ ongoing. Stop before!", "w");
             return;
           } else {
             if (pos_calib_switch.getState()) {
@@ -299,7 +295,7 @@ class Sidebar {
                 .getState()
                 .toString();
             } else {
-              alertify.warning("No calibration file selected");
+              th.ntf.notify("No calibration file selected", "w");
             }
           }
         });
@@ -328,7 +324,7 @@ class Sidebar {
         );
         rng_calib_switch.handlerEvent("click", function () {
           if (th.daqStatus == 1 || th.daqStatus == 2) {
-            alertify.warning("Data streaming or DAQ ongoing. Stop before!");
+            th.ntf.notify("Data streaming or DAQ ongoing. Stop before!", "w");
             return;
           } else {
             if (rng_calib_switch.getState()) {
@@ -344,7 +340,7 @@ class Sidebar {
                 .getState()
                 .toString();
             } else {
-              alertify.warning("No calibration file selected");
+              th.ntf.notify("No calibration file selected", "w");
             }
           }
         });
@@ -365,7 +361,7 @@ class Sidebar {
       let bkg_switch = new Switch("bkg_switch", "Subtract background");
       bkg_switch.handlerEvent("click", function () {
         if (th.daqStatus != 0) {
-          alertify.warning("Data streaming or DAQ ongoing. Stop before!");
+          th.ntf.notify("Data streaming or DAQ ongoing. Stop before!", "w");
           return;
         } else {
           if (bkg_switch.getState()) {
@@ -377,7 +373,7 @@ class Sidebar {
             // use_bkg = bkg_switch.getState();
             th.settings.use_bkg = bkg_switch.getState().toString();
           } else {
-            alertify.warning("No background source selected");
+            th.ntf.notify("No background source selected", "w");
           }
         }
       });
@@ -411,7 +407,7 @@ class Sidebar {
       let switch_range = new Switch("switch_range", "Enable rng");
       switch_profiles.handlerEvent("click", function () {
         if (th.daqStatus == 1 || th.daqStatus == 2) {
-          alertify.warning("Data streaming or DAQ ongoing. Stop before!");
+          th.ntf.notify("Data streaming or DAQ ongoing. Stop before!");
           return;
         } else {
           switch_profiles.switch_state();
@@ -420,7 +416,7 @@ class Sidebar {
       });
       switch_range.handlerEvent("click", function () {
         if (th.daqStatus == 1 || th.daqStatus == 2) {
-          alertify.warning("Data streaming or DAQ ongoing. Stop before!");
+          th.ntf.notify("Data streaming or DAQ ongoing. Stop before!", "w");
           return;
         } else {
           switch_range.switch_state();
@@ -451,7 +447,7 @@ class Sidebar {
         Util.trig("device_status", "update", 0);
         th.errorList = [];
       } else {
-        conn_error();
+        th.ntf.conn_error();
       }
     });
     this.components.status.btnResetAlarms = btn_reset_alarms;
@@ -464,8 +460,9 @@ class Sidebar {
     btn_reset_counters.addClickAction(function () {
       if (th.ws.isConnected()) {
         if (th.daqStatus == 1) {
-          alertify.warning(
-            "DAQ ongoing. Stop data streaming before performing a counter reset!"
+          th.ntf.notify(
+            "DAQ ongoing. Stop data streaming before performing a counter reset!",
+            "w"
           );
           return;
         }
@@ -478,7 +475,7 @@ class Sidebar {
         }
         th.ws.send("reset_counters");
       } else {
-        conn_error();
+        th.ntf.conn_error();
       }
     });
     this.components.settings.btnResetCounters = btn_reset_counters;
@@ -493,13 +490,13 @@ class Sidebar {
       btn_select_pos_measure.addClickAction(function () {
         if (th.ws.isConnected()) {
           if (th.daqStatus == 1 || th.daqStatus == 2) {
-            alertify.warning("DAQ ongoing. Stop data streaming before!");
+            th.ntf.notify("DAQ ongoing. Stop data streaming before!", "w");
             return;
           } else {
             th.ws.send_to_logger("log_scan_profile_files");
           }
         } else {
-          conn_error();
+          th.ntf.conn_error();
         }
       });
       this.components.logbook.btnSelectPosFile = btn_select_pos_measure;
@@ -513,13 +510,13 @@ class Sidebar {
       btn_select_rng_measure.addClickAction(function () {
         if (th.ws.isConnected()) {
           if (th.daqStatus == 1 || th.daqStatus == 2) {
-            alertify.warning("DAQ ongoing. Stop data streaming before!");
+            th.ntf.notify("DAQ ongoing. Stop data streaming before!", "w");
             return;
           } else {
             th.ws.send_to_logger("log_scan_range_files");
           }
         } else {
-          conn_error();
+          th.ntf.conn_error();
         }
       });
       this.components.logbook.btnSelectRngFile = btn_select_rng_measure;
@@ -551,14 +548,14 @@ class Sidebar {
     btn_bkg_logbook.addClickAction(function () {
       if (th.ws.isConnected()) {
         if (th.daqStatus != 0) {
-          alertify.warning("DAQ ongoing. Stop data streaming before!");
+          th.ntf.notify("DAQ ongoing. Stop data streaming before!", "w");
           return;
         } else {
           th.ws.send_to_logger("log_scan_background_files");
         }
       } else {
         console.log("SOCK is not connected!");
-        conn_error();
+        th.ntf.conn_error();
       }
     });
     this.components.background.btnBkgLogbook = btn_bkg_logbook;
@@ -575,7 +572,7 @@ class Sidebar {
           th.ws.send_to_logger("log_scan_profile_calib_files");
         } else {
           console.log("SOCK is not connected!");
-          conn_error();
+          th.ntf.conn_error();
         }
       });
       this.components.managePosCalib.select_posCalib = select_posCalib;
@@ -586,7 +583,7 @@ class Sidebar {
         1
       );
       reset_posCalib.addClickAction(function () {
-        alertify.confirm(
+        th.ntf.confirm(
           "Reset?",
           "Are you sure to reset all the calibration factors to 1?",
           function () {
@@ -597,7 +594,7 @@ class Sidebar {
             th.components.managePosCalib.form_upload_file.reset();
           },
           function () {
-            alertify.error("Aborted", 2);
+            th.ntf.notify("Aborted", "e");
             return;
           }
         );
@@ -616,7 +613,7 @@ class Sidebar {
           th.modal.show();
         } else {
           console.log("SOCK is not connected!");
-          conn_error();
+          th.ntf.conn_error();
         }
       });
       this.components.managePosCalib.save_posCalib = save_posCalib;
@@ -633,7 +630,7 @@ class Sidebar {
           th.ws.send_to_logger("log_scan_range_calib_files");
         } else {
           console.log("SOCK is not connected!");
-          conn_error();
+          th.ntf.conn_error();
         }
       });
       this.components.manageRngCalib.select_rngCalib = select_rngCalib;
@@ -644,7 +641,7 @@ class Sidebar {
         1
       );
       reset_rngCalib.addClickAction(function () {
-        alertify.confirm(
+        th.ntf.confirm(
           "Reset?",
           "Are you sure to reset all the calibration factors to 1?",
           function () {
@@ -653,7 +650,7 @@ class Sidebar {
             th.components.manageRngCalib.form_upload_file.reset();
           },
           function () {
-            alertify.error("Aborted", 2);
+            th.ntf.notify("Aborted", "e");
             return;
           }
         );
@@ -672,7 +669,7 @@ class Sidebar {
           th.modal.show();
         } else {
           console.log("SOCK is not connected!");
-          conn_error();
+          th.ntf.conn_error();
         }
       });
       this.components.manageRngCalib.save_rngCalib = save_rngCalib;
@@ -899,7 +896,7 @@ class Sidebar {
     this.modal.addButton("btn_delete", "danger", "Delete", false, function () {
       let get_html = $("#calibsList tr.selected td:first").html();
       if (!Util.isDefined(get_html)) return;
-      alertify.confirm(
+      th.ntf.confirm(
         "Delete?",
         "Are you sure to delete this calibration file?",
         function () {
@@ -912,7 +909,7 @@ class Sidebar {
           th.modal.hide();
         },
         function () {
-          alertify.error("Cancelled", 2);
+          th.ntf.notify("Cancelled", "e");
           return;
         }
       );
@@ -955,7 +952,7 @@ class Sidebar {
         files = th.rngCalibFiles;
       }
       if (files.includes(get_html)) {
-        alertify.confirm(
+        th.ntf.confirm(
           "Overwrite?",
           "A calibration file with the same name is already in memory. Proceed saving and overwrite the current file?",
           function () {
@@ -1014,7 +1011,7 @@ class Sidebar {
             th.modal.hide();
           },
           function () {
-            alertify.error("Change file name", 2);
+            th.ntf.notify("Change file name", "e");
             return;
           }
         );
@@ -1111,7 +1108,7 @@ class Sidebar {
         new_name: get_html,
       };
       if (flag) {
-        alertify.confirm(
+        th.ntf.confirm(
           "Overwrite?",
           "A background file with the same name is already in memory. Proceed saving and overwrite the current file?",
           function () {
@@ -1122,7 +1119,7 @@ class Sidebar {
             th.modal.hide();
           },
           function () {
-            alertify.error("Change file name", 2);
+            th.ntf.notify("Change file name", "e");
             return;
           }
         );
@@ -1171,13 +1168,13 @@ class Sidebar {
     this.modal.addButton("btn_delete", "danger", "Delete", false, function () {
       let get_html = $("#bkgList tr.selected td:first").html();
       if (!Util.isDefined(get_html)) {
-        alertify.warning("No file selected", 2);
+        th.ntf.notify("No file selected", "w");
         return;
       }
       let file_to_delete = {
         filename: get_html,
       };
-      alertify.confirm(
+      th.ntf.confirm(
         "Delete?",
         "Are you sure to delete this background file?",
         function () {
@@ -1185,7 +1182,7 @@ class Sidebar {
           th.modal.hide();
         },
         function () {
-          alertify.error("Cancelled", 2);
+          th.ntf.notify("Cancelled", "e");
           return;
         }
       );
@@ -1199,7 +1196,7 @@ class Sidebar {
       function () {
         let get_html = $("#bkgList tr.selected td:first").html();
         if (!Util.isDefined(get_html)) {
-          alertify.warning("No file selected", 2);
+          th.ntf.notify("No file selected", "w");
           return;
         }
         let cluster = {
@@ -1207,7 +1204,7 @@ class Sidebar {
           include: "false",
           IP_addr: th.detConfig.ws_address,
         };
-        alertify.confirm(
+        th.ntf.confirm(
           "Download?",
           "Are you sure to download this background run?",
           function () {
@@ -1218,7 +1215,7 @@ class Sidebar {
             th.modal.hide();
           },
           function () {
-            alertify.error("Cancelled", 2);
+            th.ntf.notify("Cancelled", "e");
             return;
           }
         );
@@ -1236,13 +1233,14 @@ class Sidebar {
     let th = this;
     if (this.ws.isConnected()) {
       if (this.controlUnitStatus != 0 && this.controlUnitStatus != 99) {
-        alertify.error("Internal error! CLEAR ALARMS and try again");
+        this.ntf.notify("Internal error! CLEAR ALARMS and try again", "e");
         return;
       }
       if (this.daqStatus == 2) {
         //data streaming running
-        alertify.warning(
-          "Data streaming ongoing. Stop data streaming before starting an acquisition!"
+        this.ntf.notify(
+          "Data streaming ongoing. Stop data streaming before starting an acquisition!",
+          "w"
         );
         return;
       }
@@ -1252,22 +1250,22 @@ class Sidebar {
         this.stopDAQ();
       } else if (this.daqStatus == 3) {
         //aQuracy with automatic DAQ stop
-        alertify.warning(
+        this.ntf.notify(
           "Wait! DAQ will stop automatically at the end of acquisition",
-          2
+          "w"
         );
       } else {
         // MEASURE NOT RUNNING -> start command
         if (this.HVStatus == 0) {
           //HV off case
-          alertify.confirm(
+          this.ntf.confirm(
             "HV off or out of range",
             "HV is off or out of range. Are you sure to start DAQ?",
             function () {
               th.startDAQ();
             },
             function () {
-              alertify.error("Aborted", 2);
+              this.ntf.notify("Aborted", "e");
               return;
             }
           );
@@ -1277,7 +1275,7 @@ class Sidebar {
         }
       }
     } else {
-      conn_error();
+      this.ntf.conn_error();
     }
   }
 
@@ -1285,12 +1283,13 @@ class Sidebar {
     let th = this;
     if (this.ws.isConnected()) {
       if (this.controlUnitStatus != 0) {
-        alertify.error("Internal error! CLEAR ALARMS and try again");
+        this.ntf.notify("Internal error! CLEAR ALARMS and try again", "e");
         return;
       }
       if (this.daqStatus == 1 || this.daqStatus == 4) {
-        alertify.warning(
-          "DAQ ongoing. Stop DAQ before starting data streaming!"
+        this.ntf.notify(
+          "DAQ ongoing. Stop DAQ before starting data streaming!",
+          "w"
         );
         return;
       }
@@ -1301,14 +1300,14 @@ class Sidebar {
       } else {
         if (this.HVStatus == 0) {
           //HV off case
-          alertify.confirm(
+          this.ntf.confirm(
             "HV off or out of range",
             "HV is off or out of range. Are you sure to start data streaming?",
             function () {
               th.startDataStream();
             },
             function () {
-              alertify.error("Aborted", 2);
+              this.ntf.notify("Aborted", "e");
               return;
             }
           );
@@ -1317,7 +1316,7 @@ class Sidebar {
         }
       }
     } else {
-      conn_error();
+      this.ntf.conn_error();
     }
   }
 
@@ -1345,7 +1344,7 @@ class Sidebar {
   }
 
   startDAQ() {
-    alertify.success("DAQ starting...", 2);
+    this.ntf.notify("DAQ starting...", "s");
     let date_acq = new Date();
     this.settings.datetime = formatDate(date_acq); //updating the run timestamp
     this.ws.send("measure_start", JSON.stringify(this.settings));
@@ -1385,7 +1384,7 @@ class Sidebar {
   }
 
   startDataStream() {
-    alertify.success("Data stream starting...", 2);
+    this.ntf.notify("Data stream starting...", "s");
     this.ws.send("start_data_stream", JSON.stringify(this.settings));
     this.setDaqStatus(2);
     this.configs_array.map((x) => x.disable());
@@ -1401,56 +1400,59 @@ class Sidebar {
   }
 
   recordBackground() {
-    let th = this;
+    // let th = this;
     if (this.ws.isConnected()) {
       if (this.controlUnitStatus != 0 && this.controlUnitStatus != 99) {
-        alertify.error("Internal error! CLEAR ALARMS and try again");
+        this.ntf.notify("Internal error! CLEAR ALARMS and try again", "e");
         return;
       }
       if (this.daqStatus == 2) {
-        alertify.warning(
-          "Data streaming ongoing. Stop data streaming before starting a background acquisition!"
+        this.ntf.notify(
+          "Data streaming ongoing. Stop data streaming before starting a background acquisition!",
+          "w"
         );
         return;
       }
       if (this.daqStatus == 1) {
-        alertify.warning(
-          "DAQ ongoing. Stop DAQ before starting a background acquisition!"
+        this.ntf.notify(
+          "DAQ ongoing. Stop DAQ before starting a background acquisition!",
+          "w"
         );
         return;
       }
       // Check if background acquisition is running
       if (this.daqStatus == 4) {
-        alertify.warning(
-          "Background acquisition ongoing. It will stop automatically!"
+        this.ntf.notify(
+          "Background acquisition ongoing. It will stop automatically!",
+          "w"
         );
         return;
       }
       if (this.HVStatus == 0) {
         //HV off case
-        alertify.confirm(
+        this.ntf.confirm(
           "HV off or out of range",
           "HV is off or out of range. Are you sure to start background DAQ?",
           function () {
             th.startRecordBackground();
           },
           function () {
-            alertify.error("Aborted", 2);
+            this.ntf.notify("Aborted", "e");
             return;
           }
         );
       } else {
         //HV on case
-        th.startRecordBackground();
+        this.startRecordBackground();
       }
     } else {
       console.log("WebSocket is not connected!");
-      conn_error();
+      this.ntf.conn_error();
     }
   }
 
   startRecordBackground() {
-    alertify.success("Background DAQ starting...", 2);
+    this.ntf.notify("Background DAQ starting...", "s");
     this.send("bkg_measure_start", JSON.stringify(this.bkg_settings));
     this.setDaqStatus(4);
     this.configs_array.map((x) => x.disable());
@@ -1562,7 +1564,7 @@ class Sidebar {
     if (errN != 0) {
       if (error.message != this.errorList[errN - 1].message) {
         flag_push = true;
-        notifyError(error);
+        this.ntf.notifyError(error);
       } else {
         delta_time = getDeltaDate(
           errorList[errorList.length - 1].time,
@@ -1570,13 +1572,13 @@ class Sidebar {
         );
         if (delta_time > 8) {
           flag_push = true;
-          notifyError(error);
+          this.ntf.notifyError(error);
         } else {
           flag_push = false;
         }
       }
     } else {
-      notifyError(error);
+      this.ntf.notifyError(error);
     }
     if (error.type == "99") {
       //WARNING CASE
@@ -1753,28 +1755,28 @@ class Sidebar {
   }
 
   loadCalibFile(data, mode) {
-    let th = this;
+    // let th = this;
     let recData = JSON.parse(data);
     if (mode == "rngCalib") {
       recData.Z_calib.map((x, idx) => {
-        th.calibFields.rngChannels[idx].update(x);
+        this.calibFields.rngChannels[idx].update(x);
       });
     }
     if (mode == "posCalib") {
       recData.X_calib.map((x, idx) => {
-        th.calibFields.posXchannels[idx].update(x);
+        this.calibFields.posXchannels[idx].update(x);
       });
       recData.Y_calib.map((x, idx) => {
-        th.calibFields.posYchannels[idx].update(x);
+        this.calibFields.posYchannels[idx].update(x);
       });
-      th.calibFields.intChannels[0].update(recData.Int1_calib);
-      th.calibFields.intChannels[1].update(recData.Int2_calib);
+      this.calibFields.intChannels[0].update(recData.Int1_calib);
+      this.calibFields.intChannels[1].update(recData.Int2_calib);
     }
   }
 
   uploadCalibFile(input, mode) {
-    let th = this;
-    let filename = input.val().replace(/\\/g, "/").replace(/.*\//, "");
+    // let th = this;
+    // let filename = input.val().replace(/\\/g, "/").replace(/.*\//, "");
     let inputEl = null;
     let fileInput = null;
     let textBox = null;
@@ -1791,7 +1793,7 @@ class Sidebar {
     let file = fileInput.files[0];
     let reader = new FileReader();
     reader.onload = (e) => th.validateLoadCalibUpload(e.target.result, mode);
-    reader.onerror = (e) => alertify.error("Error uploading the file", 2);
+    reader.onerror = (e) => this.ntf.notify("Error uploading the file", "e");
     reader.readAsBinaryString(file);
   }
 
@@ -1810,7 +1812,7 @@ class Sidebar {
     console.log(array_lines);
     if (mode == "rngCalib") {
       if (array_lines.length != this.detConfig.nChZ + 1) {
-        alertify.warning("Unrecognized file format");
+        this.ntf.notify("Unrecognized file format", "w");
         return;
       } else {
         array_lines.map((x, idx) => {
@@ -1827,7 +1829,7 @@ class Sidebar {
         array_lines.length != this.detConfig.nChY + 1
       ) {
         console.log(array_lines);
-        alertify.warning("Unrecognized file format");
+        this.ntf.notify("Unrecognized file format", "w");
         return;
       } else {
         array_lines.map((x, idx) => {
@@ -1853,14 +1855,18 @@ class Sidebar {
 
   disconnect() {
     if (this.daqStatus == 1) {
-      alertify.error(
-        "DAQ aborted by unexpected disconnection! The device will try to save the acquired data with comment <<Run aborted by unexpected client disconnection. CHECK THE DATA>>."
+      this.ntf.notify(
+        "DAQ aborted by unexpected disconnection! The device will try to save the acquired data with comment <<Run aborted by unexpected client disconnection. CHECK THE DATA>>.",
+        "e"
       );
       $("#btn_acq").removeClass("btn-danger").addClass("btn-success");
       $("#measurePlaySpan").removeClass("mdi-stop").addClass("mdi-play");
     }
     if (this.daqStatus == 2) {
-      alertify.error("Data streaming aborted by unexpected disconnection!");
+      this.ntf.notify(
+        "Data streaming aborted by unexpected disconnection!",
+        "e"
+      );
       Util.trig("btn_data_stream", "setName", "Start data stream");
       $("#btn_data_stream")
         .removeClass("btn-outline-danger")
