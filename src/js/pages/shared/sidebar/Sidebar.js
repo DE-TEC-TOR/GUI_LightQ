@@ -42,20 +42,17 @@ class Sidebar {
     this.devName = detConfig.devName;
     this.hasPos = detConfig.hasPos;
     this.hasRng = detConfig.hasRng;
+    this.hasInt = detConfig.hasInt;
     this.hasHV = detConfig.hasHV;
     this.dataBaseURL = "http://" + detConfig.ws_address + detConfig.data_path;
     this.calibBaseURL = "http://" + detConfig.ws_address + detConfig.calib_path;
     this.controlUnitStatus = 99;
     this.HVStatus = 99;
-    this.cameraStatus = 99;
     this.daqStatus = 0; //0 -> idle - 1 -> daqRunning - 2 -> streamingRunning - 3 -> aQuracyDaqRunning - 4 -> backgroundDaqRunning
     this.settings = {
       sampling_rate: "",
       sampling_mode: "",
-      daq_trigger: "",
       first_channel: "",
-      exposure: "",
-      tot_daq_time: "",
       use_pos_calib: "",
       pos_calib_filename: "",
       use_rng_calib: "",
@@ -69,14 +66,11 @@ class Sidebar {
     this.bkg_settings = {
       sampling_rate: "100", //to be set to 1000
       sampling_mode: "0",
-      daq_trigger: "1",
       first_channel: "1",
-      exposure: "",
-      tot_daq_time: "",
-      use_calib_profile: "false",
-      profile_calib_filename: "",
-      use_calib_range: "false",
-      range_calib_filename: "",
+      use_pos_calib: "false",
+      pos_calib_filename: "",
+      use_rng_calib: "false",
+      rng_calib_filename: "",
       use_bkg: "",
       bkg_filename: "",
       enable_range: this.hasRng.toString(),
@@ -102,6 +96,7 @@ class Sidebar {
     this.errorList = [];
     this.filesList = {
       posDataFiles: [],
+      intDataFiles: [],
       rngDataFiles: [],
       posCalibFiles: [],
       rngCalibFiles: [],
@@ -227,180 +222,140 @@ class Sidebar {
     });
     this.components.settings.samplMode = sampl_mode;
     this.configs_array.push(sampl_mode);
-
-    if (this.devName != "aQuracy") {
-      //******Sampling rate
-      let sampl_rate = new SelectBox("sampling_rate", "S. Rate [ms]");
-      sampl_rate.handlerEvent("change", function () {
-        th.settings.sampling_rate = $(sampl_rate.getId(true)).val();
-      });
-      sampl_rate.handlerEvent("updateSR", function (ref, data) {
-        sampl_rate.updateSR(data);
-      });
-      this.components.settings.samplRate = sampl_rate;
-      this.configs_array.push(sampl_rate);
-
-      this.components.settings.samplMode.handlerEvent("change", function () {
-        th.settings.sampling_mode = $(
-          th.components.settings.samplMode.getId(true)
-        ).val();
-        if ($(th.components.settings.samplMode.getId(true)).val() != "0") {
-          th.components.settings.samplRate.disable();
-        } else {
-          th.components.settings.samplRate.enable();
-        }
-      });
-
-      if (this.devName == "QUBENext" || this.devName == "QEye") {
-        //******First channel selection - QUBENext and QEye only
-        let firstCh = new SelectBox("first_channel", "1st Channel");
-        firstCh.handlerEvent("change", function () {
-          th.settings.first_channel = $(firstCh.getId(true)).val();
-        });
-        this.components.settings.firstCh = firstCh;
-        this.configs_array.push(firstCh);
+    //******Sampling rate
+    let sampl_rate = new SelectBox("sampling_rate", "S. Rate [ms]");
+    sampl_rate.handlerEvent("change", function () {
+      th.settings.sampling_rate = $(sampl_rate.getId(true)).val();
+    });
+    sampl_rate.handlerEvent("updateSR", function (ref, data) {
+      sampl_rate.updateSR(data);
+    });
+    this.components.settings.samplRate = sampl_rate;
+    this.configs_array.push(sampl_rate);
+    this.components.settings.samplMode.handlerEvent("change", function () {
+      th.settings.sampling_mode = $(
+        th.components.settings.samplMode.getId(true)
+      ).val();
+      if ($(th.components.settings.samplMode.getId(true)).val() != "0") {
+        th.components.settings.samplRate.disable();
+      } else {
+        th.components.settings.samplRate.enable();
       }
-      //------------------CALIBRATION CONTROLS
-      if (this.hasPos) {
-        let sel_text = this.hasRng ? "Pos calib file" : "Calib file";
-        let switch_text = this.hasRng
-          ? "Apply pos calibration"
-          : "Apply calibration";
-        //POS CALIBRATION SELECTION box and switch
-        let select_pos_calib = new SelectBox(
-          "select_pos_calibration",
-          sel_text
-        );
-        select_pos_calib.handlerEvent("change", function () {
-          th.settings.pos_calib_filename = $(
-            select_pos_calib.getId(true)
-          ).val();
-        });
-        let pos_calib_switch = new Switch("pos_calib_switch", switch_text);
-        pos_calib_switch.handlerEvent("click", function () {
-          if (th.daqStatus == 1 || th.daqStatus == 2) {
-            th.ntf.notify("Data streaming or DAQ ongoing. Stop before!", "w");
-            return;
-          } else {
-            if (pos_calib_switch.getState()) {
-              pos_calib_switch.switch_state();
-              // use_calib = pos_calib_switch.getState();
-              th.settings.use_pos_calib = pos_calib_switch
-                .getState()
-                .toString();
-            } else if ($(select_pos_calib.getId(true)).val()) {
-              pos_calib_switch.switch_state();
-              // use_calib = calib_switch.getState();
-              th.settings.use_pos_calib = pos_calib_switch
-                .getState()
-                .toString();
-            } else {
-              th.ntf.notify("No calibration file selected", "w");
-            }
-          }
-        });
-        this.components.calibration.select_pos_calib = select_pos_calib;
-        this.components.calibration.switch_pos_calib = pos_calib_switch;
-      }
-      if (this.hasRng) {
-        //RNG CALIBRATION SELECTION box and switch
-        let select_rng_calib = new SelectBox(
-          "select_rng_calibration",
-          "Z calib file"
-        );
-        select_rng_calib.handlerEvent("change", function () {
-          // calib_file = $(select_mlic_calib.getId(true)).val();
-          if ($(select_rng_calib.getId(true)).val()) {
-            th.settings.rng_calib_filename = $(
-              select_rng_calib.getId(true)
-            ).val();
-          } else {
-            th.settings.rng_calib_filename = "";
-          }
-        });
-        let rng_calib_switch = new Switch(
-          "rng_calib_switch",
-          "Apply Z calibration"
-        );
-        rng_calib_switch.handlerEvent("click", function () {
-          if (th.daqStatus == 1 || th.daqStatus == 2) {
-            th.ntf.notify("Data streaming or DAQ ongoing. Stop before!", "w");
-            return;
-          } else {
-            if (rng_calib_switch.getState()) {
-              rng_calib_switch.switch_state();
-              // use_mlic_calib = rng_calib_switch.getState();
-              th.settings.use_rng_calib = rng_calib_switch
-                .getState()
-                .toString();
-            } else if ($(select_rng_calib.getId(true)).val()) {
-              rng_calib_switch.switch_state();
-              // use_mlic_calib = rng_calib_switch.getState();
-              th.settings.use_rng_calib = rng_calib_switch
-                .getState()
-                .toString();
-            } else {
-              th.ntf.notify("No calibration file selected", "w");
-            }
-          }
-        });
-        this.components.calibration.select_rng_calib = select_rng_calib;
-        this.components.calibration.switch_rng_calib = rng_calib_switch;
-      }
-      //------------------BACKGROUND CONTROLS
-      let select_bkg = new SelectBox("select_background", "Bkg file");
-      select_bkg.handlerEvent("change", function () {
-        if ($(select_bkg.getId(true)).val()) {
-          th.settings.bkg_filename = $(select_bkg.getId(true)).val();
-        } else {
-          th.settings.bkg_filename = "";
-        }
+    });
+    if (this.devName == "QUBENext" || this.devName == "QEye") {
+      //******First channel selection - QUBENext and QEye only
+      let firstCh = new SelectBox("first_channel", "1st Channel");
+      firstCh.handlerEvent("change", function () {
+        th.settings.first_channel = $(firstCh.getId(true)).val();
       });
-      this.components.background.select_bkg = select_bkg;
-      //BACKGROUND ACTIVATION switch
-      let bkg_switch = new Switch("bkg_switch", "Subtract background");
-      bkg_switch.handlerEvent("click", function () {
-        if (th.daqStatus != 0) {
+      this.components.settings.firstCh = firstCh;
+      this.configs_array.push(firstCh);
+    }
+    //------------------CALIBRATION CONTROLS
+    if (this.hasPos) {
+      let sel_text = this.hasRng ? "Pos calib file" : "Calib file";
+      let switch_text = this.hasRng
+        ? "Apply pos calibration"
+        : "Apply calibration";
+      //POS CALIBRATION SELECTION box and switch
+      let select_pos_calib = new SelectBox("select_pos_calibration", sel_text);
+      select_pos_calib.handlerEvent("change", function () {
+        th.settings.pos_calib_filename = $(select_pos_calib.getId(true)).val();
+      });
+      let pos_calib_switch = new Switch("pos_calib_switch", switch_text);
+      pos_calib_switch.handlerEvent("click", function () {
+        if (th.daqStatus == 1 || th.daqStatus == 2) {
           th.ntf.notify("Data streaming or DAQ ongoing. Stop before!", "w");
           return;
         } else {
-          if (bkg_switch.getState()) {
-            bkg_switch.switch_state();
-            // use_bkg = bkg_switch.getState();
-            th.settings.use_bkg = bkg_switch.getState().toString();
-          } else if ($(select_bkg.getId(true)).val()) {
-            bkg_switch.switch_state();
-            // use_bkg = bkg_switch.getState();
-            th.settings.use_bkg = bkg_switch.getState().toString();
+          if (pos_calib_switch.getState()) {
+            pos_calib_switch.switch_state();
+            // use_calib = pos_calib_switch.getState();
+            th.settings.use_pos_calib = pos_calib_switch.getState().toString();
+          } else if ($(select_pos_calib.getId(true)).val()) {
+            pos_calib_switch.switch_state();
+            // use_calib = calib_switch.getState();
+            th.settings.use_pos_calib = pos_calib_switch.getState().toString();
           } else {
-            th.ntf.notify("No background source selected", "w");
+            th.ntf.notify("No calibration file selected", "w");
           }
         }
       });
-      this.components.background.bkg_switch = bkg_switch;
-    } else {
-      //aQuracy settings
-      //******Camera exposure selection - aQuracy only
-      let exposure = new SelectBox("exposure", "Exposure [ms]");
-      exposure.handlerEvent("change", function () {
-        th.settings.exposure = $(exposure.getId(true)).val();
-      });
-      exposure.handlerEvent("updateExposure", function (ref, data) {
-        exposure.updateExposure(data);
-      });
-      this.components.settings.exposure = exposure;
-      this.configs_array.push(exposure);
-      //******Tot acquisition time selection - aQuracy only
-      let tot_daq_time = new SelectBox("tot_daq_time", "TOT time [s]");
-      tot_daq_time.handlerEvent("change", function () {
-        th.settings.tot_daq_time = $(tot_daq_time.getId(true)).val();
-      });
-      tot_daq_time.handlerEvent("updateDAQtime", function (ref, data) {
-        tot_daq_time.updateDaqTotTime(data);
-      });
-      this.components.settings.totTime = tot_daq_time;
-      this.configs_array.push(tot_daq_time);
+      this.components.calibration.select_pos_calib = select_pos_calib;
+      this.components.calibration.switch_pos_calib = pos_calib_switch;
     }
+    if (this.hasRng) {
+      //RNG CALIBRATION SELECTION box and switch
+      let select_rng_calib = new SelectBox(
+        "select_rng_calibration",
+        "Z calib file"
+      );
+      select_rng_calib.handlerEvent("change", function () {
+        // calib_file = $(select_mlic_calib.getId(true)).val();
+        if ($(select_rng_calib.getId(true)).val()) {
+          th.settings.rng_calib_filename = $(
+            select_rng_calib.getId(true)
+          ).val();
+        } else {
+          th.settings.rng_calib_filename = "";
+        }
+      });
+      let rng_calib_switch = new Switch(
+        "rng_calib_switch",
+        "Apply Z calibration"
+      );
+      rng_calib_switch.handlerEvent("click", function () {
+        if (th.daqStatus == 1 || th.daqStatus == 2) {
+          th.ntf.notify("Data streaming or DAQ ongoing. Stop before!", "w");
+          return;
+        } else {
+          if (rng_calib_switch.getState()) {
+            rng_calib_switch.switch_state();
+            // use_mlic_calib = rng_calib_switch.getState();
+            th.settings.use_rng_calib = rng_calib_switch.getState().toString();
+          } else if ($(select_rng_calib.getId(true)).val()) {
+            rng_calib_switch.switch_state();
+            // use_mlic_calib = rng_calib_switch.getState();
+            th.settings.use_rng_calib = rng_calib_switch.getState().toString();
+          } else {
+            th.ntf.notify("No calibration file selected", "w");
+          }
+        }
+      });
+      this.components.calibration.select_rng_calib = select_rng_calib;
+      this.components.calibration.switch_rng_calib = rng_calib_switch;
+    }
+    //------------------BACKGROUND CONTROLS
+    let select_bkg = new SelectBox("select_background", "Bkg file");
+    select_bkg.handlerEvent("change", function () {
+      if ($(select_bkg.getId(true)).val()) {
+        th.settings.bkg_filename = $(select_bkg.getId(true)).val();
+      } else {
+        th.settings.bkg_filename = "";
+      }
+    });
+    this.components.background.select_bkg = select_bkg;
+    //BACKGROUND ACTIVATION switch
+    let bkg_switch = new Switch("bkg_switch", "Subtract background");
+    bkg_switch.handlerEvent("click", function () {
+      if (th.daqStatus != 0) {
+        th.ntf.notify("Data streaming or DAQ ongoing. Stop before!", "w");
+        return;
+      } else {
+        if (bkg_switch.getState()) {
+          bkg_switch.switch_state();
+          // use_bkg = bkg_switch.getState();
+          th.settings.use_bkg = bkg_switch.getState().toString();
+        } else if ($(select_bkg.getId(true)).val()) {
+          bkg_switch.switch_state();
+          // use_bkg = bkg_switch.getState();
+          th.settings.use_bkg = bkg_switch.getState().toString();
+        } else {
+          th.ntf.notify("No background source selected", "w");
+        }
+      }
+    });
+    this.components.background.bkg_switch = bkg_switch;
     //------------------------------------MODULE SWITCHES
     if (this.hasPos && this.hasRng) {
       let switch_profiles = new Switch("switch_profiles", "Enable pos");
@@ -481,7 +436,8 @@ class Sidebar {
     this.components.settings.btnResetCounters = btn_reset_counters;
     //--------------------------------------SELECT MEASURE BUTTONS - LOGBOOK--------------------------------------//
     if (this.hasPos) {
-      let meas_text = this.hasRng ? "Select pos measure" : "Select measure";
+      let meas_text =
+        this.hasInt || this.hasRng ? "Select pos measure" : "Select measure";
       let btn_select_pos_measure = new Button(
         "btn_select_measure",
         meas_text,
@@ -502,9 +458,11 @@ class Sidebar {
       this.components.logbook.btnSelectPosFile = btn_select_pos_measure;
     }
     if (this.hasRng) {
+      let meas_z_text =
+        this.hasInt || this.hasPos ? "Select rng measure" : "Select measure";
       let btn_select_rng_measure = new Button(
         "btn_select_range_measure",
-        "Select Z Measure",
+        meas_z_text,
         1
       );
       btn_select_rng_measure.addClickAction(function () {
@@ -521,6 +479,28 @@ class Sidebar {
       });
       this.components.logbook.btnSelectRngFile = btn_select_rng_measure;
     }
+    if (this.hasInt) {
+      let meas_int_text =
+        this.hasRng || this.hasPos ? "Select int measure" : "Select measure";
+      let btn_select_int_measure = new Button(
+        "btn_select_int_measure",
+        meas_int_text,
+        1
+      );
+      btn_select_int_measure.addClickAction(function () {
+        if (th.ws.isConnected()) {
+          if (th.daqStatus == 1 || th.daqStatus == 2) {
+            th.ntf.notify("DAQ ongoing. Stop data streaming before!", "w");
+            return;
+          } else {
+            th.ws.send_to_logger("log_scan_int_files");
+          }
+        } else {
+          th.ntf.conn_error();
+        }
+      });
+      this.components.logbook.btnSelectIntFile = btn_select_int_measure;
+    }
     //--------------------------------------ACQUISITION BUTTON--------------------------------------//
     let btn_acq = new Button(
       "btn_acq",
@@ -528,6 +508,7 @@ class Sidebar {
       2
     );
     btn_acq.addClickAction(function () {
+      console.log(th.settings);
       th.toggleDaq();
     });
     this.components.acquisition.btnDAQ = btn_acq;
@@ -1385,6 +1366,7 @@ class Sidebar {
 
   startDataStream() {
     this.ntf.notify("Data stream starting...", "s");
+    console.log(this.settings);
     this.ws.send("start_data_stream", JSON.stringify(this.settings));
     this.setDaqStatus(2);
     this.configs_array.map((x) => x.disable());

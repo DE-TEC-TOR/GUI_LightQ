@@ -2,8 +2,8 @@
  *
  *  Contains the all the actions connected to the webSocket functionalities
  *
- * @author : Mattia Fontana
- * @company : TORETDevices srl
+ * @author : MattF
+ * @company : DE.TEC.TOR. srl
  * @version : 1.0.0
  *
  */

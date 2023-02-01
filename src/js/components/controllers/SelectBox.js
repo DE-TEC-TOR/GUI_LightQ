@@ -80,10 +80,6 @@ class SelectBox extends Component {
     $(this.getId(true)).prop("disabled", true);
   }
 
-  setUp() {
-    SOCK.send(this.getId(), null, true);
-  }
-
   update(data) {
     // Create option tag foreach result
     let th = this;
@@ -116,40 +112,13 @@ class SelectBox extends Component {
     dataParsed.list.forEach(function (opt) {
       switch (opt) {
         case "0":
-          $(th.getId(true)).append(
-            $("<option>", {
-              value: opt,
-              html: "Continuous",
-              selected: opt == dataParsed.current ? true : false,
-            })
-          );
+          th.addOption(opt, "Continuous", opt == dataParsed.current);
           break;
         case "1":
-          $(th.getId(true)).append(
-            $("<option>", {
-              value: opt,
-              html: "Trig. [rising edge]",
-              selected: opt == dataParsed.current ? true : false,
-            })
-          );
-          break;
-        case "2":
-          $(th.getId(true)).append(
-            $("<option>", {
-              value: opt,
-              html: "Trig. [falling edge]",
-              selected: opt == dataParsed.current ? true : false,
-            })
-          );
+          th.addOption(opt, "Triggered", opt == dataParsed.current);
           break;
         default:
-          $(th.getId(true)).append(
-            $("<option>", {
-              value: opt,
-              html: "Continuous",
-              selected: opt == dataParsed.current ? true : false,
-            })
-          );
+          th.addOption(opt, "Continuous", opt == dataParsed.current);
           break;
       }
     });
@@ -166,13 +135,7 @@ class SelectBox extends Component {
     $(th.getId(true)).empty();
     // Create option tag foreach result
     dataParsed.list.forEach(function (opt) {
-      $(th.getId(true)).append(
-        $("<option>", {
-          value: opt,
-          html: (1000 / opt).toString(),
-          selected: opt == dataParsed.current ? true : false,
-        })
-      );
+      th.addOption(opt, (1000 / opt).toString(), opt == dataParsed.current);
     });
     Util.trig(th.getId(), "change");
     let n_opt = $(this.getId(true) + " > option").length;

@@ -23,7 +23,7 @@ class Notifier {
    * @param type      (e: error, w: warning, i: info)
    * @param delay
    */
-  notify(msg = "i", type = "i", delay = 0) {
+  notify(msg = "i", type = "i", delay = 2) {
     let _msg = Util.isValid(msg) ? msg : "";
     let _type = "";
     let _delay = Util.isValidNumber(delay) ? delay : 5;

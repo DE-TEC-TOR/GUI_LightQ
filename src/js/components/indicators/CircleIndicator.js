@@ -1,8 +1,8 @@
 /**
  * Circle status indicator for sidebar
  *
- * @author : Mattia Fontana
- * @company : TORETDevices srl
+ * @author : MattF
+ * @company : DE.TEC.TOR. srl
  * @version : 1.0.0
  */
 import Util from "../../core/Util";

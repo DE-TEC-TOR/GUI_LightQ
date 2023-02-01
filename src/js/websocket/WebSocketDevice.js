@@ -24,6 +24,7 @@ class WebSocketDevice extends WebsocketController {
 
   messageParse(message) {
     let msg = super.messageParse(message);
+    console.log(msg.action);
     if (Util.isDefined(msg.action)) {
       switch (msg.action) {
         //----------------------------------------connection messages
@@ -152,6 +153,10 @@ class WebSocketDevice extends WebsocketController {
             JSON.parse(msg.value).type
           );
           break;
+        case "alarms_reset_done":
+          wsActions.updateDeviceStatus(this.components.sidebar, 0);
+          this.ntf.notify("Alarms reset completed", "s");
+          break;
         case "memory_update": //update control unit memory status
           wsActions.updateMemoryStatus(this.components.sidebar, msg.value);
           break;
@@ -236,6 +241,7 @@ class WebSocketDevice extends WebsocketController {
         //----------------------------------------operation messages
         case "counters_reset_done": //feedback of reset performed from control unit -> reset plots on page
           wsActions.resetAllPlots(this.components.sidebar);
+          this.ntf.notify("Counters reset completed", "s");
           break;
         case "download_files": //automatic download of zip files created in the device CU
           $("#sidebar").append(
