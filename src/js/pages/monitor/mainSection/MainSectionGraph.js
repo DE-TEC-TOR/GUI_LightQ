@@ -35,6 +35,7 @@ class MainSectionGraphs {
       controls: { xAxis: {}, yAxis: {}, zAxis: {}, integrals: {} },
     };
     this.ws = webSock; //reference to the main page socket
+    this.ntf = notifier;
     this.graph_array = [];
     this.graph2d_array = [];
     this.graph_array_depth = [];
@@ -329,34 +330,25 @@ class MainSectionGraphs {
         offset_selector_x.update(value);
       });
       axes_switch_x.handlerEvent("click", function () {
-        if (th.daqStatus != 0) {
-          notifier.notify(
-            "Data streaming or DAQ ongoing. Stop before!",
-            "w",
-            2
-          );
-          return;
+        if (axes_switch_x.getState()) {
+          axes_switch_x.switch_state();
+          th.graph_array_profiles_x.map((x) => {
+            x.reset_x_axis();
+          });
         } else {
-          if (axes_switch_x.getState()) {
-            axes_switch_x.switch_state();
-            th.graph_array_profiles_x.map((x) => {
-              x.reset_x_axis();
-            });
+          if ($(pitch_selector_x.getId(true)).val() == "") {
+            this.ntf.notify("No pitch selected", "w", 2);
           } else {
-            if ($(pitch_selector_x.getId(true)).val() == "") {
-              notifier.notify("No pitch selected", "w", 2);
-            } else {
-              axes_switch_x.switch_state();
-              let ptc = !isNaN(validateNumInput(pitch_selector_x.getId(true)))
-                ? validateNumInput(pitch_selector_x.getId(true))
-                : th.posResolution;
-              let off = !isNaN(validateNumInput(offset_selector_x.getId(true)))
-                ? validateNumInput(offset_selector_x.getId(true))
-                : ((th.nChX - 1) / 2) * th.posResolution;
-              th.graph_array_profiles_x.map((x) => {
-                x.change_x_axis(ptc, off, th.posPitch);
-              });
-            }
+            axes_switch_x.switch_state();
+            let ptc = !isNaN(validateNumInput(pitch_selector_x.getId(true)))
+              ? validateNumInput(pitch_selector_x.getId(true))
+              : th.posResolution;
+            let off = !isNaN(validateNumInput(offset_selector_x.getId(true)))
+              ? validateNumInput(offset_selector_x.getId(true))
+              : ((th.nChX - 1) / 2) * th.posResolution;
+            th.graph_array_profiles_x.map((x) => {
+              x.change_x_axis(ptc, off, th.posPitch);
+            });
           }
         }
       });
@@ -390,34 +382,25 @@ class MainSectionGraphs {
         offset_selector_y.update(value);
       });
       axes_switch_y.handlerEvent("click", function () {
-        if (th.daqStatus != 0) {
-          notifier.notify(
-            "Data streaming or DAQ ongoing. Stop before!",
-            "w",
-            2
-          );
-          return;
+        if (axes_switch_y.getState()) {
+          axes_switch_y.switch_state();
+          th.graph_array_profiles_y.map((x) => {
+            x.reset_x_axis();
+          });
         } else {
-          if (axes_switch_y.getState()) {
-            axes_switch_y.switch_state();
-            th.graph_array_profiles_y.map((x) => {
-              x.reset_x_axis();
-            });
+          if ($(pitch_selector_y.getId(true)).val() == "") {
+            this.ntf.notify("No pitch selected", "w", 2);
           } else {
-            if ($(pitch_selector_y.getId(true)).val() == "") {
-              notifier.notify("No pitch selected", "w", 2);
-            } else {
-              axes_switch_y.switch_state();
-              let ptc = !isNaN(validateNumInput(pitch_selector_y.getId(true)))
-                ? validateNumInput(pitch_selector_y.getId(true))
-                : th.posResolution;
-              let off = !isNaN(validateNumInput(offset_selector_y.getId(true)))
-                ? validateNumInput(offset_selector_y.getId(true))
-                : ((th.nChX - 1) / 2) * th.posResolution;
-              th.graph_array_profiles_y.map((x) => {
-                x.change_x_axis(ptc, off, th.posPitch);
-              });
-            }
+            axes_switch_y.switch_state();
+            let ptc = !isNaN(validateNumInput(pitch_selector_y.getId(true)))
+              ? validateNumInput(pitch_selector_y.getId(true))
+              : th.posResolution;
+            let off = !isNaN(validateNumInput(offset_selector_y.getId(true)))
+              ? validateNumInput(offset_selector_y.getId(true))
+              : ((th.nChX - 1) / 2) * th.posResolution;
+            th.graph_array_profiles_y.map((x) => {
+              x.change_x_axis(ptc, off, th.posPitch);
+            });
           }
         }
       });
@@ -553,11 +536,7 @@ class MainSectionGraphs {
       });
       range_axes_switch.handlerEvent("click", function () {
         if (th.daqStatus != 0) {
-          notifier.notify(
-            "Data streaming or DAQ ongoing. Stop before!",
-            "w",
-            2
-          );
+          this.ntf.notify("Data streaming or DAQ ongoing. Stop before!", "w");
           return;
         } else {
           if (range_axes_switch.getState()) {
@@ -567,7 +546,7 @@ class MainSectionGraphs {
             });
           } else {
             if ($(range_pitch_selector.getId(true)).val() == "") {
-              notifier.notify("No pitch selected", "w", 2);
+              this.ntf.notify("No pitch selected", "w", 2);
             } else {
               range_axes_switch.switch_state();
               let ptc = !isNaN(
@@ -721,11 +700,7 @@ class MainSectionGraphs {
       });
       range_axes_switch_comb.handlerEvent("click", function () {
         if (th.daqStatus != 0) {
-          notifier.notify(
-            "Data streaming or DAQ ongoing. Stop before!",
-            "w",
-            2
-          );
+          this.ntf.notify("Data streaming or DAQ ongoing. Stop before!", "w");
           return;
         } else {
           if (range_axes_switch_comb.getState()) {
@@ -733,7 +708,7 @@ class MainSectionGraphs {
             th.components.graphs.rngGraphs.rngGraphComb.reset_x_axis();
           } else {
             if ($(range_pitch_selector_comb.getId(true)).val() == "") {
-              notifier.notify("No pitch selected", "w", 2);
+              this.ntf.notify("No pitch selected", "w");
             } else {
               range_axes_switch_comb.switch_state();
               let ptc = !isNaN(
@@ -779,11 +754,7 @@ class MainSectionGraphs {
       });
       axes_switch_x_comb.handlerEvent("click", function () {
         if (th.daqStatus != 0) {
-          notifier.notify(
-            "Data streaming or DAQ ongoing. Stop before!",
-            "w",
-            2
-          );
+          this.ntf.notify("Data streaming or DAQ ongoing. Stop before!", "w");
           return;
         } else {
           if (axes_switch_x_comb.getState()) {
@@ -791,7 +762,7 @@ class MainSectionGraphs {
             th.components.graphs.posGraphs.posXgraphComb.reset_x_axis();
           } else {
             if ($(pitch_selector_x_comb.getId(true)).val() == "") {
-              notifier.notify("No pitch selected", "w", 2);
+              this.ntf.notify("No pitch selected", "w");
             } else {
               axes_switch_x_comb.switch_state();
               let ptc = !isNaN(
@@ -835,38 +806,29 @@ class MainSectionGraphs {
         offset_selector_y_comb.update(value);
       });
       axes_switch_y_comb.handlerEvent("click", function () {
-        if (th.daqStatus != 0) {
-          notifier.notify(
-            "Data streaming or DAQ ongoing. Stop before!",
-            "w",
-            2
-          );
-          return;
+        if (axes_switch_y_comb.getState()) {
+          axes_switch_y_comb.switch_state();
+          th.components.graphs.posGraphs.posYgraphComb.reset_x_axis();
         } else {
-          if (axes_switch_y_comb.getState()) {
-            axes_switch_y_comb.switch_state();
-            th.components.graphs.posGraphs.posYgraphComb.reset_x_axis();
+          if ($(pitch_selector_y_comb.getId(true)).val() == "") {
+            this.ntf.notify("No pitch selected", "w");
           } else {
-            if ($(pitch_selector_y_comb.getId(true)).val() == "") {
-              notifier.notify("No pitch selected", "w", 2);
-            } else {
-              axes_switch_y_comb.switch_state();
-              let ptc = !isNaN(
-                validateNumInput(pitch_selector_y_comb.getId(true))
-              )
-                ? validateNumInput(pitch_selector_y_comb.getId(true))
-                : th.posResolution;
-              let off = !isNaN(
-                validateNumInput(offset_selector_y_comb.getId(true))
-              )
-                ? validateNumInput(offset_selector_y_comb.getId(true))
-                : ((th.nChY - 1) / 2) * th.posResolution;
-              th.components.graphs.posGraphs.posYgraphComb.change_x_axis(
-                ptc,
-                off,
-                th.posPitch
-              );
-            }
+            axes_switch_y_comb.switch_state();
+            let ptc = !isNaN(
+              validateNumInput(pitch_selector_y_comb.getId(true))
+            )
+              ? validateNumInput(pitch_selector_y_comb.getId(true))
+              : th.posResolution;
+            let off = !isNaN(
+              validateNumInput(offset_selector_y_comb.getId(true))
+            )
+              ? validateNumInput(offset_selector_y_comb.getId(true))
+              : ((th.nChY - 1) / 2) * th.posResolution;
+            th.components.graphs.posGraphs.posYgraphComb.change_x_axis(
+              ptc,
+              off,
+              th.posPitch
+            );
           }
         }
       });

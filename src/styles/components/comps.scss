@@ -585,3 +585,8 @@ a:hover {
   display: flex;
   flex-direction: column;
 }
+
+.modal-body {
+  max-height: 75vh;
+  overflow-y: auto;
+}

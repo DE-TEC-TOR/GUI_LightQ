@@ -14,8 +14,8 @@ let actions = {};
 
 //---------------------------- DEVICE STATUS UPDATE ACTIONS ----------------------------//
 actions.connected = (sidebar, val) => {
-  sidebar.setControlUnitStatus(val);
   sidebar.initConfig();
+  sidebar.setControlUnitStatus(val);
 };
 
 actions.updateDeviceStatus = (sidebar, val) => {
@@ -74,12 +74,13 @@ actions.resetAllPlots = (sidebar) => {
   sidebar.resetAllPlots();
 };
 
-actions.updateRunList = (sidebar, data, mode) => {
+actions.updateRunList = (sidebar, data, mode, notifier) => {
   let fileList = sidebar.updateDataFileList(data, mode);
-  if (fileList.length > 0) {
+  if (fileList.length >= 0) {
     sidebar.fillLogbookDataModal(mode);
     sidebar.getModal().show();
   } else {
+    notifier.notify("No data files in memory", "w");
     Util.log("Measures list not defined", 1);
   }
 };

@@ -148,10 +148,7 @@ class WebSocketDevice extends WebsocketController {
           wsActions.updateHVStatus(this.components.sidebar, msg.type);
           break;
         case "device_status": //update control unit status
-          wsActions.updateDeviceStatus(
-            this.components.sidebar,
-            JSON.parse(msg.value).type
-          );
+          wsActions.updateDeviceStatus(this.components.sidebar, msg.type);
           break;
         case "alarms_reset_done":
           wsActions.updateDeviceStatus(this.components.sidebar, 0);
@@ -200,6 +197,7 @@ class WebSocketDevice extends WebsocketController {
           );
           break;
         case "load_profile_calib": //load profile calibration factors from file on screen
+          console.log(msg.value);
           wsActions.loadCalibFile(
             this.components.sidebar,
             JSON.parse(msg.value),
@@ -270,7 +268,16 @@ class WebSocketDevice extends WebsocketController {
           wsActions.updateRunList(
             this.components.sidebar,
             msg.value,
-            "posData"
+            "posData",
+            this.ntf
+          );
+          break;
+        case "integral_run_list":
+          wsActions.updateRunList(
+            this.components.sidebar,
+            msg.value,
+            "intData",
+            this.ntf
           );
           break;
         case "run_saved": //feedback after succesful data file saving

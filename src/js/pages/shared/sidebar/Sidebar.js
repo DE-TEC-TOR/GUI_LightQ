@@ -5,9 +5,13 @@
  * @company : DE.TEC.TOR. srl
  * @version : 1.0.0
  */
+import latinize from "latinize";
 import Util from "../../../core/Util";
 import Button from "../../../components/controllers/Button";
-import { FreeTextBox } from "../../../components/controllers/TextBoxes";
+import {
+  FreeTextBox,
+  TextBoxBig,
+} from "../../../components/controllers/TextBoxes";
 import { FileIn } from "../../../components/controllers/FileUploads";
 import Switch from "../../../components/controllers/Switch";
 import SelectBox from "../../../components/controllers/SelectBox";
@@ -18,8 +22,12 @@ import {
   formatDate,
   validateNumInput,
   getDeltaDate,
+  sortRuns,
+  resizeText,
+  treatNotes,
 } from "../../../core/Helpers";
 import Loader from "../../../components/indicators/Loader";
+import { default as configs } from "../../../shared/configs";
 
 const DEF_INPUT_CALIB = {
   posXchannels: [],
@@ -106,8 +114,7 @@ class Sidebar {
       filename: "",
       X_calib: [],
       Y_calib: [],
-      Int1_calib: 1.0,
-      Int2_calib: 1.0,
+      INT_calib: [],
       filename_Z: "",
       Z_calib: [],
     };
@@ -508,7 +515,6 @@ class Sidebar {
       2
     );
     btn_acq.addClickAction(function () {
-      console.log(th.settings);
       th.toggleDaq();
     });
     this.components.acquisition.btnDAQ = btn_acq;
@@ -758,9 +764,7 @@ class Sidebar {
     this.modal.setTitle("Save / Discard Run");
     this.modal.setBody(
       '<div class="input-group">\n' +
-        '  <div class="input-group-prepend">\n' +
-        '    <span class="input-group-text">Notes</span>\n' +
-        "  </div>\n" +
+        '  <span class="input-group-text">Notes</span>\n' +
         '  <textarea id="notes" class="form-control" aria-label="With textarea"></textarea>\n' +
         "</div>"
     );
@@ -795,6 +799,391 @@ class Sidebar {
     });
   }
 
+  fillLogbookDataModal(mode) {
+    let th = this;
+    let measuresList = null;
+    let notes_list = null;
+    let data = null;
+    let modalTitle = null;
+    if (mode == "posData") {
+      data = this.filesList.posDataFiles;
+      modalTitle = "Profile data file list";
+    } else if (mode == "intData") {
+      data = this.filesList.intDataFiles;
+      modalTitle = "Integral data file list";
+    }
+    let apply = "";
+    let calib_filename_modal = "";
+    let select_calibration = new SelectBox("select_calibration_modal", "Calib");
+    select_calibration.handlerEvent("change", function () {
+      calib_filename_modal = $(select_calibration.getId(true)).val();
+    });
+    let switch_calibration = new Switch(
+      "switch_calibration",
+      "Apply calibration on load"
+    );
+    switch_calibration.handlerEvent("click", function () {
+      if (switch_calibration.getState()) {
+        switch_calibration.switch_state();
+        apply = switch_calibration.getState().toString();
+      } else if ($(select_calibration.getId(true)).val()) {
+        switch_calibration.switch_state();
+        apply = switch_calibration.getState().toString();
+      } else {
+        th.ntf.notify("No calibration file selected", "w");
+      }
+    });
+    let edit_notes = new TextBoxBig("edit_notes", "Notes");
+    if (data.length >= 0) {
+      measuresList = sortRuns(data);
+      //--------------------------------------LOGBOOK MODAL--------------------------------------//
+      this.modal.setTitle(modalTitle);
+      this.modal.setBody(
+        $("<table>", { class: "table" })
+          .append(
+            $("<thead>")
+              .append(
+                $("<tr>")
+                  .append($("<th>", { scope: "col", width: "10%", html: "#" }))
+                  .append(
+                    $("<th>", {
+                      scope: "col",
+                      width: "20%",
+                      html: "Name",
+                    })
+                  )
+                  .append(
+                    $("<th>", {
+                      scope: "col",
+                      width: "60%",
+                      html: "Notes",
+                    })
+                  )
+                  .append(
+                    $("<th>", {
+                      scope: "col",
+                      width: "10%",
+                      html: "Select",
+                    })
+                  )
+              )
+              .append(
+                $("<tr>")
+                  .append($("<td>", { scope: "col", width: "10%", html: "" }))
+                  .append($("<td>", { scope: "col", width: "20%", html: "" }))
+                  .append(
+                    $("<td>", {
+                      scope: "col",
+                      width: "60%",
+                      html: "",
+                    })
+                  )
+                  .append(
+                    $("<td>", {
+                      scope: "col",
+                      width: "10%",
+                      html: "",
+                      class: "tdselect",
+                    }).append(
+                      $("<label>", {
+                        class: "select-all-container",
+                        html: "All",
+                      })
+                        .append(
+                          $("<input>", { type: "checkbox", id: "select_all" })
+                        )
+                        .append($("<span>", { class: "checkmark" }))
+                    )
+                  )
+              )
+          )
+          .append($("<tbody>", { id: "measuresList" }))
+      );
+      this.modal.setBody(
+        $("<div>", { class: "row", style: "padding-top: 20px;" })
+          .append(
+            $("<div>", {
+              id: "SpaceCal_inModal",
+              class: "align-middle col-xl-4 col-lg-4 col-md-4 col-sm-4",
+            })
+          )
+          .append(
+            $("<div>", {
+              id: "SelCal_inModal",
+              class: "align-middle col-xl-4 col-lg-4 col-md-4 col-sm-4",
+            })
+          )
+          .append(
+            $("<div>", {
+              id: "SwCal_inModal",
+              class: "align-middle col-xl-4 col-lg-4 col-md-4 col-sm-4",
+            })
+          )
+          .append("<div>", {
+            class: "row",
+            style: "padding-top: 10px;",
+          })
+          .append(
+            $("<div>", {
+              id: "EditNotes_inModal",
+              class: "align-middle col-xl-12 col-lg-12 col-md-12 col-sm-12",
+              style: "display: none; height: 150px; width:100%",
+            })
+          )
+      );
+      select_calibration.draw("#SelCal_inModal");
+      switch_calibration.draw("#SwCal_inModal");
+      if (th.filesList.posCalibFiles.length > 0) {
+        th.filesList.posCalibFiles.forEach(function (opt, index) {
+          $("#select_calibration_modal").append(
+            $("<option>", { value: opt, html: opt })
+          );
+        });
+        Util.trig("select_calibration_modal", "change");
+        // If there is at least one option, enable input
+        select_calibration.enable();
+      }
+      edit_notes.draw("#EditNotes_inModal");
+      if (data.length > 0) {
+        data.forEach(function (meas, index) {
+          let correctedNotes = treatNotes(meas.notes);
+          $("#measuresList").append(
+            $("<tr>", { class: "" })
+              .append($("<th>", { scope: "row", html: index }))
+              .append($("<td>", { class: "tdname", html: meas.name }))
+              .append(
+                $("<td>", {
+                  class: "tdnotes",
+                  html: correctedNotes,
+                })
+              )
+              .append(
+                $("<td>", { class: "tdselect" }).append(
+                  $("<div>", { class: "form-check" }).append(
+                    $("<input>", {
+                      class: "form-check-input selected-file",
+                      type: "checkbox",
+                      id: "select_" + index,
+                      "data-name": meas.name,
+                    })
+                  )
+                )
+              )
+          );
+        });
+        Util.attachEvent("#select_all", "click", function (ref) {
+          let newStatus = false;
+          if (document.getElementById("select_all").checked) {
+            newStatus = true;
+          }
+          data.forEach(function (data, index) {
+            document.getElementById("select_" + index).checked = newStatus;
+          });
+        });
+        // Select row behavior
+        Util.attachEvent("#measuresList tr", "click", function (ref) {
+          $(ref).addClass("selected").siblings().removeClass("selected");
+          let get_html = $("#measuresList tr.selected td.tdname").html();
+          let notes_html = $("#measuresList tr.selected td.tdnotes").html();
+          Util.trig("edit_notes", "update", notes_html);
+          $("#EditNotes_inModal").show();
+          if ($("#download_titles").length) $("#download_titles").remove();
+          if ($("#download_links_row").length)
+            $("#download_links_row").remove();
+          //DEVICES WITH ONLY INTEGRAL MODULE
+          $("#measuresList")
+            .append(
+              $("<tr>", { id: "download_titles" })
+                .append($("<th>", { scope: "col", html: " " }))
+                .append($("<th>", { scope: "col", html: "DOWNLOAD DATA" }))
+                .append($("<th>", { scope: "col", html: "DOWNLOAD NOTES" }))
+            )
+            .append(
+              $("<tr>", { class: "download_links", id: "download_links_row" })
+                .append($("<td>", { scope: "row", class: "align-middle" }))
+                .append(
+                  $("<td>", { class: "align-middle" }).append(
+                    $("<div>", { class: "btn-success" }).append(
+                      $("<a>", {
+                        id: "link_d",
+                        href: configs.dataFolder + get_html + "_profileINT.txt",
+                        target: "_blank",
+                        download: get_html + "_profileINT.txt",
+                        html: "Data",
+                      })
+                    )
+                  )
+                )
+                .append(
+                  $("<td>", { class: "align-middle" }).append(
+                    $("<div>", { class: "btn-success" }).append(
+                      $("<a>", {
+                        id: "link_n",
+                        href: configs.dataFolder + get_html + "_notes.txt",
+                        target: "_blank",
+                        download: get_html + "_notes.txt",
+                        html: "Notes",
+                      })
+                    )
+                  )
+                )
+            );
+        });
+      } else {
+        $("#measuresList").append(
+          '<p style="padding: 10px;">No available files</p>'
+        );
+      }
+      //DOWNLOAD ALL SELECTED
+      this.modal.addButton(
+        "btn_download",
+        "outline-success",
+        '<span class="mdi mdi-briefcase-download"> Download selected</span>',
+        false,
+        function () {
+          let names = [];
+          if (data.length > 0) {
+            data.forEach(function (data, index) {
+              if (document.getElementById("select_" + index).checked) {
+                names.push(
+                  document
+                    .getElementById("select_" + index)
+                    .getAttribute("data-name")
+                );
+              }
+            });
+          } else {
+            console.log("No available files");
+          }
+          if (names.length == 0) {
+            th.ntf.notify("No files selected", "w");
+            return;
+          }
+          let confirm_text = "Are you sure to download this run ?";
+          if (names.length > 1) {
+            confirm_text =
+              "Are you sure to download " + names.length + " runs? ";
+          }
+          th.ntf.confirm(
+            "Download?",
+            confirm_text,
+            function () {
+              let cluster = {
+                file_list: names,
+                include: "false",
+                IP_addr: DET_CONFIG.ws_address,
+              };
+              th.ws.send_to_logger(
+                "download_int_files",
+                JSON.stringify(cluster)
+              );
+              th.ntf.notify("Preparing download, please wait...", "w", 1000);
+            },
+            function () {
+              th.ntf.notify("Cancelled", "e");
+              return;
+            }
+          );
+        }
+      );
+      // DELETE FILE
+      this.modal.addButton(
+        "btn_delete",
+        "danger",
+        "Delete",
+        false,
+        function () {
+          let names = [];
+          if (data.length > 0) {
+            data.forEach(function (data, index) {
+              if (document.getElementById("select_" + index).checked) {
+                names.push(
+                  document
+                    .getElementById("select_" + index)
+                    .getAttribute("data-name")
+                );
+              }
+            });
+          } else {
+            console.log("No available files");
+          }
+          if (names.length == 0) {
+            th.ntf.notify("No files selected", "w");
+            return;
+          }
+          let confirm_text = "Are you sure to delete this run ?";
+          if (names.length > 1) {
+            confirm_text = "Are you sure to delete " + names.length + " runs? ";
+          }
+          th.ntf.confirm(
+            "Delete?",
+            confirm_text,
+            function () {
+              let cluster = {
+                file_list: names,
+              };
+              th.ws.send_to_logger("delete_int_files", JSON.stringify(cluster));
+              th.modal.hide();
+            },
+            function () {
+              th.ntf.notify("Cancelled", "e");
+              return;
+            }
+          );
+        }
+      );
+      // LOAD FILE
+      this.modal.addButton("btn_load", "success", "Load", false, function () {
+        let get_html = $("#measuresList tr.selected td.tdname").html();
+        if (!Util.isDefined(get_html)) return;
+        let file_to_load = {
+          data_filename: get_html,
+          use_calib: apply,
+          calib_file: calib_filename_modal,
+        };
+        th.ws.send_to_logger("log_load_int_file", JSON.stringify(file_to_load));
+        th.ntf.notify("Loading run data... Please wait", "w", 1000);
+        th.modal.hide();
+      });
+      // EDIT NOTES FILE
+      this.modal.addButton(
+        "btn_edit",
+        "warning",
+        "Edit notes",
+        false,
+        function () {
+          let get_html = $("#measuresList tr.selected td.tdnotes").html();
+          let get_name = $("#measuresList tr.selected td.tdname").html();
+          let modified_note = treatNotes(latinize($("#edit_notes").val()));
+          if (!Util.isDefined(get_html)) return;
+          let file_to_edit = {
+            notes_filename: get_name,
+            old_notes: get_html,
+            new_notes: modified_note,
+          };
+          if (modified_note != get_html) {
+            th.ws.send_to_logger(
+              "log_edit_notes",
+              JSON.stringify(file_to_edit)
+            );
+            $("#measuresList tr.selected td.tdnotes").html(modified_note);
+          } else {
+            th.ntf.notify("The notes have not been modified", "w");
+          }
+        }
+      );
+      // DISMISS MODAL
+      this.modal.addButton("btn_close", "secondary", "Close", true);
+      resizeText({
+        element: null,
+        elements: document.querySelectorAll(".tdnotes"),
+        step: 0.5,
+      });
+    } else {
+      Util.log("No data stored on the device", 1);
+    }
+  }
+
   fillLogbookCalibrationModal(mode) {
     let th = this;
     let calibList = null;
@@ -802,11 +1191,11 @@ class Sidebar {
     switch (mode) {
       case "posCalib":
         calibList = this.filesList.posCalibFiles;
-        suffix = ".XYcalib";
+        suffix = "_calib.csv";
         break;
       case "rngCalib":
         calibList = this.filesList.posCalibFiles;
-        suffix = ".Zcalib";
+        suffix = "_Zcalib.csv";
         break;
       default:
         console.log("Case not recognized");
@@ -858,7 +1247,7 @@ class Sidebar {
                   $("<div>", { class: "btn-success" }).append(
                     $("<a>", {
                       id: "link_calib",
-                      href: th.calibBaseURL + get_html + suffix,
+                      href: configs.calibFolder + get_html + suffix,
                       target: "_blank",
                       download: get_html + suffix,
                       html: "Calibration",
@@ -916,9 +1305,7 @@ class Sidebar {
     this.modal.setTitle("Save Calibration");
     this.modal.setBody(
       '<div class="input-group">\n' +
-        '  <div class="input-group-prepend">\n' +
         '    <span class="input-group-text">File name</span>\n' +
-        "  </div>\n" +
         '  <textarea id="calib_name" class="form-control" aria-label="With textarea"></textarea>\n' +
         "</div>"
     );
@@ -927,10 +1314,10 @@ class Sidebar {
       let calib_factors = {};
       let files = [];
       if (mode == "pos") {
-        files = th.posCalibFiles;
+        files = th.filesList.posCalibFiles;
       }
       if (mode == "rng") {
-        files = th.rngCalibFiles;
+        files = th.filesList.rngCalibFiles;
       }
       if (files.includes(get_html)) {
         th.ntf.confirm(
@@ -938,6 +1325,9 @@ class Sidebar {
           "A calibration file with the same name is already in memory. Proceed saving and overwrite the current file?",
           function () {
             if (mode == "pos") {
+              calib_factors["posXchannels"] = [];
+              calib_factors["posYchannels"] = [];
+              calib_factors["intChannels"] = [];
               th.calibFields.posXchannels.map(
                 (x, idx) =>
                   (calib_factors["posXchannels"][idx] = !isNaN(
@@ -946,6 +1336,7 @@ class Sidebar {
                     ? validateNumInput(x.getId(true))
                     : 1)
               );
+              console.log(calib_factors["posXchannels"]);
               th.calibFields.posYchannels.map(
                 (y, idx) =>
                   (calib_factors["posYchannels"][idx] = !isNaN(
@@ -962,11 +1353,9 @@ class Sidebar {
                     ? validateNumInput(int.getId(true))
                     : 1)
               );
-              calib_factors["intChannels"].map((i, idx) => {
-                th.calib_param["Int" + (idx + 1) + "_calib"] = i;
-              });
               th.calib_param.X_calib = calib_factors["posXchannels"];
               th.calib_param.Y_calib = calib_factors["posYchannels"];
+              th.calib_param.INT_calib = calib_factors["intChannels"];
               th.calib_param.filename = get_html;
               th.ws.send_to_logger(
                 "log_save_profile_calibration",
@@ -974,6 +1363,7 @@ class Sidebar {
               );
             }
             if (mode == "rng") {
+              calib_factors["rngChannels"] = [];
               th.calibFields.rngChannels.map(
                 (x, idx) =>
                   (calib_factors["rngChannels"][idx] = !isNaN(
@@ -998,6 +1388,9 @@ class Sidebar {
         );
       } else {
         if (mode == "pos") {
+          calib_factors["posXchannels"] = [];
+          calib_factors["posYchannels"] = [];
+          calib_factors["intChannels"] = [];
           th.calibFields.posXchannels.map(
             (x, idx) =>
               (calib_factors["posXchannels"][idx] = !isNaN(
@@ -1022,11 +1415,9 @@ class Sidebar {
                 ? validateNumInput(int.getId(true))
                 : 1)
           );
-          calib_factors["intChannels"].map((i, idx) => {
-            th.calib_param["Int" + (idx + 1) + "_calib"] = i;
-          });
           th.calib_param.X_calib = calib_factors["posXchannels"];
           th.calib_param.Y_calib = calib_factors["posYchannels"];
+          th.calib_param.INT_calib = calib_factors["intChannels"];
           th.calib_param.filename = get_html;
           th.ws.send_to_logger(
             "log_save_profile_calibration",
@@ -1034,6 +1425,7 @@ class Sidebar {
           );
         }
         if (mode == "rng") {
+          calib_factors["rngChannels"] = [];
           th.calibFields.rngChannels.map(
             (x, idx) =>
               (calib_factors["rngChannels"][idx] = !isNaN(
@@ -1100,7 +1492,7 @@ class Sidebar {
             th.modal.hide();
           },
           function () {
-            th.ntf.notify("Change file name", "e");
+            th.ntf.notify("Change file name", "i");
             return;
           }
         );
@@ -1229,12 +1621,6 @@ class Sidebar {
       if (this.daqStatus == 1) {
         // MEASURE RUNNING -> stop command
         this.stopDAQ();
-      } else if (this.daqStatus == 3) {
-        //aQuracy with automatic DAQ stop
-        this.ntf.notify(
-          "Wait! DAQ will stop automatically at the end of acquisition",
-          "w"
-        );
       } else {
         // MEASURE NOT RUNNING -> start command
         if (this.HVStatus == 0) {
@@ -1301,22 +1687,45 @@ class Sidebar {
     }
   }
 
+  tuneSettings(mode) {
+    if (mode === "start") {
+      if ($(this.components.settings.samplMode.getId(true)).val() != "0") {
+        this.components.settings.samplRate.disable();
+      } else {
+        this.components.settings.samplRate.enable();
+      }
+    } else if (mode === "stop") {
+    } else {
+      console.log("Unknown mode!");
+    }
+  }
+
+  toggleGUIinteractions(mode) {
+    if (mode === "on") {
+      this.graph_array.map((x) => {
+        x.enable_tooltips();
+      });
+      this.configs_array.map((x) => {
+        x.enable();
+      });
+    } else if (mode === "off") {
+      this.configs_array.map((x) => {
+        x.disable();
+      });
+      this.graph_array.map((x) => {
+        x.reset();
+        x.disable_tooltips();
+      });
+    }
+  }
+
   stopDAQ(auto = false) {
     if (!auto) {
       this.ws.send("measure_stop");
     }
-    this.configs_array.map((x) => {
-      x.enable();
-    });
-    if ($(this.components.settings.samplMode.getId(true)).val() != "0") {
-      this.components.settings.samplRate.disable();
-    } else {
-      this.components.settings.samplRate.enable();
-    }
+    this.toggleGUIinteractions("on");
+    this.tuneSettings("stop");
     this.setDaqStatus(0);
-    this.graph_array.map((x) => {
-      x.enable_tooltips();
-    });
     this.components.acquisition.loader.deactivate();
     $("#btn_acq").removeClass("btn-danger").addClass("btn-success");
     $("#measurePlaySpan").removeClass("mdi-stop").addClass("mdi-play");
@@ -1325,19 +1734,13 @@ class Sidebar {
   }
 
   startDAQ() {
-    this.ntf.notify("DAQ starting...", "s");
+    this.ntf.notify("DAQ starting...", "i");
     let date_acq = new Date();
     this.settings.datetime = formatDate(date_acq); //updating the run timestamp
+    console.log(this.settings.datetime);
     this.ws.send("measure_start", JSON.stringify(this.settings));
-    this.setDaqStatus(this.devName == "aQuracy" ? 3 : 1);
-    console.log("Updated DAQ status -> " + this.daqStatus);
-    this.configs_array.map((x) => {
-      x.disable();
-    });
-    this.graph_array.map((x) => {
-      x.reset();
-      x.disable_tooltips();
-    });
+    this.setDaqStatus(1);
+    this.toggleGUIinteractions("off");
     $("#btn_acq").removeClass("btn-success").addClass("btn-danger");
     $("#measurePlaySpan").removeClass("mdi-play").addClass("mdi-stop");
     this.components.acquisition.loader.activate();
@@ -1345,18 +1748,8 @@ class Sidebar {
 
   stopDataStream() {
     this.ws.send("stop_data_stream");
-    this.configs_array.map((x) => {
-      x.enable();
-    });
-    if ($(this.components.settings.samplMode.getId(true)).val() != "0") {
-      this.components.settings.samplRate.disable();
-    } else {
-      this.components.settings.samplRate.enable();
-    }
-    this.setDaqStatus(0);
-    this.graph_array.map((x) => {
-      x.enable_tooltips();
-    });
+    this.toggleGUIinteractions("on");
+    this.tuneSettings("stop");
     this.components.acquisition.loader.deactivate();
     this.components.acquisition.btnDataStream.setName("Start data stream");
     $("#btn_data_stream")
@@ -1369,11 +1762,7 @@ class Sidebar {
     console.log(this.settings);
     this.ws.send("start_data_stream", JSON.stringify(this.settings));
     this.setDaqStatus(2);
-    this.configs_array.map((x) => x.disable());
-    this.graph_array.map((x) => {
-      x.disable_tooltips();
-      x.reset();
-    });
+    toggleGUIinteractions("off");
     this.components.acquisition.btnDataStream.setName("Stop data stream");
     $("#btn_data_stream")
       .removeClass("btn-outline-success")
@@ -1531,7 +1920,7 @@ class Sidebar {
 
   setHVStatus(val) {
     this.hvStatus = parseInt(val);
-    this.components.status.hvStatus_ind.updateHV(val);
+    this.components.status.hvStatus_ind.updateHV(this.hvStatus);
   }
 
   updateErrorList(data) {
@@ -1703,7 +2092,7 @@ class Sidebar {
     let run_list = unpacked.run_list;
     let notes_list = unpacked.notes_list;
     let measuresList = [];
-    if (run_list.length >= 0) {
+    if (run_list.length > 0) {
       let dt = { name: "", notes: "" };
       run_list.forEach(function (value, index) {
         dt = { name: "", notes: "" };
@@ -1717,6 +2106,9 @@ class Sidebar {
           break;
         case "rngData":
           this.filesList.rngDataFiles = measuresList;
+          break;
+        case "intData":
+          this.filesList.intDataFiles = measuresList;
           break;
         default:
           console.log("Case not recognized");
@@ -1735,22 +2127,23 @@ class Sidebar {
   }
 
   loadCalibFile(data, mode) {
-    // let th = this;
-    let recData = JSON.parse(data);
     if (mode == "rngCalib") {
-      recData.Z_calib.map((x, idx) => {
+      data.Z_calib.map((x, idx) => {
         this.calibFields.rngChannels[idx].update(x);
       });
     }
     if (mode == "posCalib") {
-      recData.X_calib.map((x, idx) => {
+      data.X_calib.map((x, idx) => {
         this.calibFields.posXchannels[idx].update(x);
       });
-      recData.Y_calib.map((x, idx) => {
+      data.Y_calib.map((x, idx) => {
         this.calibFields.posYchannels[idx].update(x);
       });
-      this.calibFields.intChannels[0].update(recData.Int1_calib);
-      this.calibFields.intChannels[1].update(recData.Int2_calib);
+      data.INT_calib.map((x, idx) => {
+        if (idx < configs.nChInt) {
+          this.calibFields.intChannels[idx].update(x);
+        }
+      });
     }
   }
 
@@ -1783,8 +2176,7 @@ class Sidebar {
       X_calib: [],
       Y_calib: [],
       Z_calib: [],
-      Int1_calib: 1,
-      Int2_calib: 1,
+      INT_calib: [],
     };
     // let content = e.target.result;
     let array_lines = content.split("\n");
@@ -1818,8 +2210,8 @@ class Sidebar {
             data.X_calib.push(parseFloat(temp[1]));
             data.Y_calib.push(parseFloat(temp[2]));
             if (temp[3]) {
-              if (idx == 1) data.Int1_calib = parseFloat(temp[3]);
-              if (idx == 2) data.Int2_calib = parseFloat(temp[3]);
+              if (idx == 1) data.INT_calib.push(parseFloat(temp[3]));
+              if (idx == 2) data.INT_calib.push(parseFloat(temp[3]));
             }
           }
         });

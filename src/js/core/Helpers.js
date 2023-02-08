@@ -11,7 +11,7 @@ export function createVersionObject(devName, devID, rev) {
   return {
     prod: "De.Tec.Tor. srl",
     rel: "v1.0.0",
-    date: "03/2020",
+    date: "03/2022",
     product: devName,
     manual: "QCM" + devID + "-R&D-UM-" + rev,
   };
@@ -75,7 +75,6 @@ export function getScript(url) {
 export function validateNumInput(id) {
   return parseFloat($(id).val().replace(/\s/g, "").replace(",", "."));
 }
-
 //Initialization of new page detector-customized style
 export function initPageStyle(favicon, style) {
   let favicon_el = document.getElementById("favicon");
@@ -93,7 +92,7 @@ export function initPageStyle(favicon, style) {
 }
 //clear content of HTML container (div)
 export function clearDiv(elementID) {
-  var div = document.getElementById(elementID);
+  let div = document.getElementById(elementID);
   while (div.firstChild) {
     div.removeChild(div.firstChild);
   }
@@ -115,4 +114,94 @@ export function array_mean(array) {
     count++;
   });
   return mean / count;
+}
+//reorder run list
+export function sortRuns(array) {
+  array.sort((a, b) => {
+    let fa = a.name.toLowerCase();
+    let fb = b.name.toLowerCase();
+    if (fa < fb) {
+      return 1;
+    }
+    if (fa > fb) {
+      return -1;
+    }
+    return 0;
+  });
+  return array;
+}
+//check text overflow
+export function isOverflown(clientHeight, scrollHeight) {
+  scrollHeight > clientHeight;
+}
+//resize text in box
+export function resizeText(
+  element,
+  elements,
+  minSize = 8,
+  maxSize = 12,
+  step = 1,
+  unit = "px"
+) {
+  if (elements) {
+    (elements || [element]).forEach((el) => {
+      let i = minSize;
+      let overflow = false;
+      const parent = el.parentNode;
+      while (!overflow && i < maxSize) {
+        el.style.fontSize = `${i}${unit}`;
+        overflow = isOverflown(parent);
+        if (!overflow) i += step;
+      }
+      // revert to last state where no overflow happened
+      el.style.fontSize = `${i - step}${unit}`;
+    });
+  }
+}
+//split long words to fit box
+export function splitLongWords(str, size) {
+  const numChunks = Math.ceil(str.length / size);
+  const chunks = new Array(numChunks);
+  for (let i = 0, o = 0; i < numChunks; ++i, o += size) {
+    chunks[i] = str.substr(o, size);
+  }
+  return chunks;
+}
+//remove all occurrences of VALUE from the array ARR
+const removeAllFromArray = (arr, value) => {
+  let i = 0;
+  while (i < arr.length) {
+    if (arr[i] === value) {
+      arr.splice(i, 1);
+    } else {
+      ++i;
+    }
+  }
+  return arr;
+};
+//treat text to remove unrecognized symbols
+export function treatNotes(notes) {
+  //adapt the notes text to the modal space by chuncking long strings
+  let charN = 36;
+  let splitNotes = notes.split("\n");
+  let newNotes = [];
+  let mod_line = [];
+  let temp_chunks = [];
+  let wil = [];
+  splitNotes.forEach((line) => {
+    wil = line.split(" ");
+    mod_line = [];
+    wil.forEach((word) => {
+      if (word.length > charN) {
+        temp_chunks = splitLongWords(word, charN);
+        mod_line.push(temp_chunks.join(" "));
+      } else {
+        mod_line.push(word);
+      }
+    });
+    newNotes.push(mod_line.join(" "));
+  });
+  newNotes = removeAllFromArray(newNotes, "");
+  let correctedNotes = newNotes.join("\n");
+  return correctedNotes;
 }

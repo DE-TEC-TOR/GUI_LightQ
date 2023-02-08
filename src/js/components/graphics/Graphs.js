@@ -468,6 +468,7 @@ export class Graph extends Component {
   change_x_axis(ptc, off, set_pitch = 1, label = "mm") {
     let new_labels = [];
     let new_data = [];
+    console.log(this.defaultData);
     /* Create labels */
     for (let i = 0; i < this.numberOfPoints; ++i) {
       new_labels.push((i * ptc - off).toFixed(1));

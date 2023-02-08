@@ -30,13 +30,11 @@ export class NumberBox extends Component {
     $(father).append(
       $("<div>", { class: "input-group input-group-sm mb-3" })
         .append(
-          //   $("<div>", { class: "input-group-prepend" }).append(
           $("<label>", {
             class: "input-group-text select_box_label",
             for: this.getId(),
             html: this.label,
           })
-          //   )
         )
         .append(
           $("<input>", {
@@ -87,13 +85,11 @@ export class FreeTextBox extends Component {
     $(father).append(
       $("<div>", { class: "input-group input-group-sm mb-3" })
         .append(
-          $("<div>", { class: "input-group-prepend" }).append(
-            $("<label>", {
-              class: "input-group-text select_box_label",
-              for: this.getId(),
-              html: this.label,
-            })
-          )
+          $("<label>", {
+            class: "input-group-text select_box_label",
+            for: this.getId(),
+            html: this.label,
+          })
         )
         .append(
           $("<input>", {
@@ -137,18 +133,12 @@ export class TextBoxBig extends Component {
         style: "height: 100%",
       })
         .append(
-          // $('<div>', {
-          //     class: 'input-group-prepend',
-          //     style: 'height: 100%'
-          // })
-          // .append(
           $("<label>", {
             class: "input-group-text select_box_label",
             for: this.getId(),
             html: this.label,
             style: "height: 100%",
           })
-          // )
         )
         .append(
           $("<textarea>", {
@@ -194,14 +184,12 @@ export class UnitTextBox extends Component {
         style: "margin-top: 5px",
       })
         .append(
-          $("<div>", { class: "input-group-prepend" }).append(
-            $("<label>", {
-              class: "input-group-text select_box_label",
-              id: this.getId() + "_label",
-              for: this.getId(),
-              html: this.label,
-            })
-          )
+          $("<label>", {
+            class: "input-group-text select_box_label",
+            id: this.getId() + "_label",
+            for: this.getId(),
+            html: this.label,
+          })
         )
         .append(
           $("<input>", {
