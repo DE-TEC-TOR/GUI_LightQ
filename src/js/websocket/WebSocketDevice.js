@@ -24,7 +24,6 @@ class WebSocketDevice extends WebsocketController {
 
   messageParse(message) {
     let msg = super.messageParse(message);
-    console.log(msg.action);
     if (Util.isDefined(msg.action)) {
       switch (msg.action) {
         //----------------------------------------connection messages
@@ -36,7 +35,7 @@ class WebSocketDevice extends WebsocketController {
           break;
         //----------------------------------------DAQ messages
         case "DAQ_end": //programmatic daq stop
-          wsActions.autoStopDaq(this.components.sidebar);
+          wsActions.stopAndSave(this.components.sidebar);
           break;
         //----------------------------------------plot messages
         //POSITION PROFILE section
@@ -265,6 +264,7 @@ class WebSocketDevice extends WebsocketController {
           break;
         //----------------------------------------logbook/data-calib storage messages
         case "profile_run_list": //open profile files modal
+          console.log(msg.value);
           wsActions.updateRunList(
             this.components.sidebar,
             msg.value,

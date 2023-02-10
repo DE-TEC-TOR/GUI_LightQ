@@ -947,7 +947,7 @@ class MainSectionGraphs {
       default:
         return;
     }
-    graph.updateData(data);
+    graph[0].updateData(data);
   }
 
   loadIntegrals(name, mode, data) {

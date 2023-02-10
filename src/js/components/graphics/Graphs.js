@@ -1,8 +1,8 @@
 /**
  * Graph elements -> from ChartJS library
  *
- * @author : Mattia Fontana
- * @company : TORETDevices srl
+ * @author : MattF
+ * @company : DE.TEC.TOR. srl
  * @version : 1.0.0
  */
 import Chart from "chart.js/auto";
@@ -34,9 +34,12 @@ export class Graph extends Component {
     for (let i = 0; i < this.numberOfPoints; ++i) {
       this.labels.push(i);
     }
-    for (let i = 0; i < this.numberOfPoints; ++i) {
-      this.defaultData.push({ x: this.labels[i], y: 0 });
-    }
+    this.labels.forEach((i) => {
+      this.defaultData.push({
+        x: i,
+        y: 0,
+      });
+    });
     this.pitch = pitch == null ? 6 : pitch;
     this.aspect_ratio = aspRat;
     /* Graph HTML values */
@@ -241,7 +244,7 @@ export class Graph extends Component {
           y: data_array[i],
         });
       }
-      th.graph.data.datasets[0].data = new_data; //data_array;
+      th.graph.data.datasets[0].data = new_data;
       th.config.options.scales.y.max = 1.2;
       th.config.options.scales.y.min = -0.2;
       th.graph.update();
@@ -279,18 +282,15 @@ export class Graph extends Component {
 
   reset() {
     let Ndatasets = this.graph.data.datasets.length;
-    this.graph.data.datasets[0].data.pop();
     if (Ndatasets > 1) {
       for (let i = 1; i < Ndatasets; ++i) {
         this.graph.data.datasets.pop();
       }
     }
-    // let Nannot = this.graph.options.annotation.annotations.length;
-    // if (Nannot > 0) {
-    //     for (let j = 0; j < Nannot; j++) {
-    //         this.graph.options.annotation.annotations.pop();
-    //     }
-    // }
+    this.defaultData = [];
+    for (let i = 0; i < this.numberOfPoints; ++i) {
+      this.defaultData.push({ x: this.labels[i], y: 0 });
+    }
     this.createLabels();
   }
 
@@ -450,15 +450,14 @@ export class Graph extends Component {
   }
 
   reset_x_axis() {
-    //new
     let new_data = [];
-    for (let i = 0; i < this.numberOfPoints; ++i) {
+    this.defaultData.forEach((x, i) => {
       this.labels[i] = i;
       new_data.push({
         x: i,
-        y: this.defaultData[i].y,
+        y: x.y,
       });
-    }
+    });
     this.config.options.scales.x.title.text = "channel";
     this.defaultData = new_data;
     this.graph.data.datasets[0].data = new_data;
@@ -468,15 +467,13 @@ export class Graph extends Component {
   change_x_axis(ptc, off, set_pitch = 1, label = "mm") {
     let new_labels = [];
     let new_data = [];
-    console.log(this.defaultData);
-    /* Create labels */
-    for (let i = 0; i < this.numberOfPoints; ++i) {
+    this.defaultData.forEach((x, i) => {
       new_labels.push((i * ptc - off).toFixed(1));
       new_data.push({
         x: (i * ptc - off).toFixed(1),
-        y: this.defaultData[i].y,
+        y: x.y,
       });
-    }
+    });
     this.labels = new_labels;
     this.graph.data.labels = new_labels;
     this.config.options.scales.x.title.text = label;
@@ -524,18 +521,15 @@ export class Graph extends Component {
       }
     }
     let data = JSON.parse(newData);
-    let data_array = data.slice(1, this.numberOfPoints + 1);
-    //new
     let new_data = [];
-    for (let i = 0; i < this.numberOfPoints; i++) {
+    data.forEach((x, i) => {
       new_data.push({
         x: this.labels[i],
-        y: data_array[i],
+        y: x,
       });
-    }
-    //end new
+    });
     this.defaultData = new_data;
-    this.graph.data.datasets[0].data = new_data; //data_array;
+    this.graph.data.datasets[0].data = new_data;
     this.graph.update();
   }
 
@@ -640,19 +634,6 @@ export class Graph extends Component {
     this.graph.resetZoom();
   }
 
-  // reset2Dzoom() {
-  //   let Nlines = this.graph.data.datasets.length;
-  //   if (Nlines > 1) {
-  //     alertify.warning(
-  //       "This would make you lose the analysis results. Autoscale the 2D plot if you are sure.",
-  //       3
-  //     );
-  //     return;
-  //   }
-  //   this.graph.data.datasets[0].data = this.defaultData; //data_array;
-  //   this.graph.update();
-  // }
-
   getNlines() {
     let Nlines = this.graph.data.datasets.length;
     return Nlines;
@@ -684,12 +665,12 @@ export class GraphInt extends Component {
     for (let i = 0; i < this.numberOfPoints; ++i) {
       this.labels.push(i);
     }
-    for (let i = 0; i < this.numberOfPoints; ++i) {
+    this.labels.forEach((i) => {
       this.defaultData.push({
-        x: this.labels[i],
+        x: i,
         y: 0,
       });
-    }
+    });
     this.title = title;
     this.height = "270px";
     this.width = "100%";
@@ -816,7 +797,6 @@ export class GraphInt extends Component {
   createGraph() {
     this.graph = new Chart(document.getElementById(this.getId()), this.config);
     this.createLabels();
-
     let th = this;
     this.handlerEvent("updateData", function (ref, newData) {
       th.updateData(newData);
@@ -832,7 +812,14 @@ export class GraphInt extends Component {
   }
 
   reset() {
-    this.graph.clear(); //data.datasets[0].data = null;
+    this.labels = [];
+    this.defaultData = [];
+    this.labels.forEach((i) => {
+      this.defaultData.push({
+        x: i,
+        y: 0,
+      });
+    });
     this.createLabels();
   }
 
@@ -845,7 +832,7 @@ export class GraphInt extends Component {
       x: sample_id[0],
       y: int_data[0],
     });
-    if (this.graph.data.datasets[0].data.length > 1500) {
+    if (this.graph.data.datasets[0].data.length > 2000) {
       this.graph.data.datasets[0].data.shift();
       this.graph.data.labels.shift();
     }
@@ -854,7 +841,6 @@ export class GraphInt extends Component {
 
   loadData(newData) {
     let th = this;
-    this.graph.clear();
     this.createLabels();
     let data = JSON.parse(newData);
     let sample_id = data.ID;

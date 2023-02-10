@@ -121,8 +121,8 @@ actions.loadCalibFile = (sidebar, data, mode) => {
   sidebar.loadCalibFile(data, mode);
 };
 
-actions.autoStopDaq = (sidebar) => {
-  sidebar.stopDAQ(true);
+actions.stopAndSave = (sidebar) => {
+  sidebar.saveData();
 };
 
 actions.warning = (sidebar, data) => {

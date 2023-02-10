@@ -420,6 +420,9 @@ class Sidebar {
       1
     );
     btn_reset_counters.addClickAction(function () {
+      // th.graph_array.forEach((x) => {
+      //   x.reset();
+      // });
       if (th.ws.isConnected()) {
         if (th.daqStatus == 1) {
           th.ntf.notify(
@@ -429,9 +432,6 @@ class Sidebar {
           return;
         }
         if (th.daqStatus == 2) {
-          for (let i = 0; i < th.graph_array.length; i++) {
-            Util.trig(th.graph_array[i].getId(), "reset");
-          }
           th.ws.send("reset_counters", "restart");
           return;
         }
@@ -794,15 +794,14 @@ class Sidebar {
         notes: get_html,
         errors: error_string,
       };
-      th.ws.send("save_notes", JSON.stringify(notes_cluster));
+      th.ws.send_to_logger("log_save_notes", JSON.stringify(notes_cluster));
       th.modal.hide();
     });
   }
 
   fillLogbookDataModal(mode) {
     let th = this;
-    let measuresList = null;
-    let notes_list = null;
+    let measuresList = [];
     let data = null;
     let modalTitle = null;
     if (mode == "posData") {
@@ -812,6 +811,7 @@ class Sidebar {
       data = this.filesList.intDataFiles;
       modalTitle = "Integral data file list";
     }
+    console.log(data);
     let apply = "";
     let calib_filename_modal = "";
     let select_calibration = new SelectBox("select_calibration_modal", "Calib");
@@ -1073,10 +1073,18 @@ class Sidebar {
                 include: "false",
                 IP_addr: DET_CONFIG.ws_address,
               };
-              th.ws.send_to_logger(
-                "download_int_files",
-                JSON.stringify(cluster)
-              );
+              if (mode == "posData") {
+                th.ws.send_to_logger(
+                  "download_profile_files",
+                  JSON.stringify(cluster)
+                );
+              }
+              if (mode == "intData") {
+                th.ws.send_to_logger(
+                  "download_int_files",
+                  JSON.stringify(cluster)
+                );
+              }
               th.ntf.notify("Preparing download, please wait...", "w", 1000);
             },
             function () {
@@ -1122,7 +1130,18 @@ class Sidebar {
               let cluster = {
                 file_list: names,
               };
-              th.ws.send_to_logger("delete_int_files", JSON.stringify(cluster));
+              if (mode == "posData") {
+                th.ws.send_to_logger(
+                  "delete_profile_files",
+                  JSON.stringify(cluster)
+                );
+              }
+              if (mode == "intData") {
+                th.ws.send_to_logger(
+                  "delete_int_files",
+                  JSON.stringify(cluster)
+                );
+              }
               th.modal.hide();
             },
             function () {
@@ -1599,7 +1618,9 @@ class Sidebar {
   }
 
   resetAllPlots() {
-    this.graph_array.map((x) => x.reset());
+    this.graph_array.forEach((x) => {
+      x.reset();
+    });
   }
 
   toggleDaq() {
@@ -1729,6 +1750,9 @@ class Sidebar {
     this.components.acquisition.loader.deactivate();
     $("#btn_acq").removeClass("btn-danger").addClass("btn-success");
     $("#measurePlaySpan").removeClass("mdi-stop").addClass("mdi-play");
+  }
+
+  saveData() {
     this.fillDAQModal();
     this.modal.show();
   }
@@ -1747,9 +1771,10 @@ class Sidebar {
   }
 
   stopDataStream() {
-    this.ws.send("stop_data_stream");
+    this.ws.send("measure_stop");
     this.toggleGUIinteractions("on");
     this.tuneSettings("stop");
+    this.setDaqStatus(0);
     this.components.acquisition.loader.deactivate();
     this.components.acquisition.btnDataStream.setName("Start data stream");
     $("#btn_data_stream")
@@ -1762,12 +1787,12 @@ class Sidebar {
     console.log(this.settings);
     this.ws.send("start_data_stream", JSON.stringify(this.settings));
     this.setDaqStatus(2);
-    toggleGUIinteractions("off");
+    this.toggleGUIinteractions("off");
+    this.components.acquisition.loader.activate();
     this.components.acquisition.btnDataStream.setName("Stop data stream");
     $("#btn_data_stream")
       .removeClass("btn-outline-success")
       .addClass("btn-outline-danger");
-    this.components.acquisition.loader.activate();
   }
 
   recordBackground() {
@@ -2000,7 +2025,7 @@ class Sidebar {
           );
           break;
         case 2:
-          this.ws.send("stop_data_stream");
+          this.ws.send("measure_stop");
           $(this.components.acquisition.btnDataStream.getId(true))
             .removeClass("btn-outline-danger")
             .addClass("btn-outline-success");
@@ -2100,20 +2125,20 @@ class Sidebar {
         dt.notes = notes_list[index];
         measuresList.push({ name: value, notes: notes_list[index] });
       });
-      switch (mode) {
-        case "posData":
-          this.filesList.posDataFiles = measuresList;
-          break;
-        case "rngData":
-          this.filesList.rngDataFiles = measuresList;
-          break;
-        case "intData":
-          this.filesList.intDataFiles = measuresList;
-          break;
-        default:
-          console.log("Case not recognized");
-          break;
-      }
+    }
+    switch (mode) {
+      case "posData":
+        this.filesList.posDataFiles = measuresList;
+        break;
+      case "rngData":
+        this.filesList.rngDataFiles = measuresList;
+        break;
+      case "intData":
+        this.filesList.intDataFiles = measuresList;
+        break;
+      default:
+        console.log("Case not recognized");
+        break;
     }
     return measuresList;
   }
@@ -2148,8 +2173,6 @@ class Sidebar {
   }
 
   uploadCalibFile(input, mode) {
-    // let th = this;
-    // let filename = input.val().replace(/\\/g, "/").replace(/.*\//, "");
     let inputEl = null;
     let fileInput = null;
     let textBox = null;
@@ -2165,7 +2188,7 @@ class Sidebar {
     }
     let file = fileInput.files[0];
     let reader = new FileReader();
-    reader.onload = (e) => th.validateLoadCalibUpload(e.target.result, mode);
+    reader.onload = (e) => this.validateLoadCalibUpload(e.target.result, mode);
     reader.onerror = (e) => this.ntf.notify("Error uploading the file", "e");
     reader.readAsBinaryString(file);
   }
@@ -2178,10 +2201,8 @@ class Sidebar {
       Z_calib: [],
       INT_calib: [],
     };
-    // let content = e.target.result;
     let array_lines = content.split("\n");
     array_lines = array_lines.filter((line) => line); // removing all falsy values from lines array -> this removes the empty lines at the end of the file
-    console.log(array_lines);
     if (mode == "rngCalib") {
       if (array_lines.length != this.detConfig.nChZ + 1) {
         this.ntf.notify("Unrecognized file format", "w");
@@ -2200,7 +2221,6 @@ class Sidebar {
         array_lines.length != this.detConfig.nChX + 1 ||
         array_lines.length != this.detConfig.nChY + 1
       ) {
-        console.log(array_lines);
         this.ntf.notify("Unrecognized file format", "w");
         return;
       } else {
@@ -2222,7 +2242,7 @@ class Sidebar {
 
   validateLoadCalibUpload(content, mode) {
     let data = this.validateCalibUpload(content, mode);
-    this.loadCalibFile(JSON.stringify(data), mode);
+    this.loadCalibFile(data, mode);
   }
 
   disconnect() {
