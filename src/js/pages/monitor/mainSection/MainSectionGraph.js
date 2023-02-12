@@ -11,7 +11,7 @@ import { NumberBox } from "../../../components/controllers/TextBoxes";
 import { Graph, GraphInt } from "../../../components/graphics/Graphs";
 import { validateNumInput } from "../../../core/Helpers";
 
-const segmPos = 21;
+const segmPos = 16;
 const segmRng = 32;
 
 class MainSectionGraphs {
@@ -32,7 +32,7 @@ class MainSectionGraphs {
     this.daqStatus = 0; //0 -> idle - 1 -> daqRunning - 2 -> streamingRunning - 3 -> aQuracyDaqRunning
     this.components = {
       graphs: { posGraphs: {}, rngGraphs: {}, intGraphs: {} },
-      controls: { xAxis: {}, yAxis: {}, zAxis: {}, integrals: {} },
+      controls: { xAxis: {}, yAxis: {}, zAxis: {}, integrals: {}, shared: {} },
     };
     this.ws = webSock; //reference to the main page socket
     this.ntf = notifier;
@@ -883,6 +883,48 @@ class MainSectionGraphs {
         th.components.graphs.posGraphs.pos2DprojY.reset2Dzoom();
       });
     }
+    //only LightQ
+    let HIanode_switch = new Switch("switch_HI_anode", "HI config?");
+    let high_low_switch = new Switch("switch_high_low", "high (ON)/low (OFF)");
+    let sum_strips_switch = new Switch("switch_sum_strips", "sum strips?");
+    this.components.controls.shared.HIanode_switch = HIanode_switch;
+    this.components.controls.shared.high_low_switch = high_low_switch;
+    this.components.controls.shared.sum_strips_switch = sum_strips_switch;
+    HIanode_switch.handlerEvent("click", function () {
+      if (HIanode_switch.getState()) {
+        HIanode_switch.switch_state();
+        high_low_switch.set_state(false);
+        sum_strips_switch.set_state(false);
+        high_low_switch.disable();
+        sum_strips_switch.disable();
+        th.ws.send("set_HIanode", "false");
+      } else {
+        high_low_switch.enable();
+        sum_strips_switch.enable();
+        HIanode_switch.switch_state();
+        th.ws.send("set_HIanode", "true");
+      }
+    });
+    high_low_switch.handlerEvent("click", function () {
+      if (high_low_switch.getState()) {
+        high_low_switch.switch_state();
+        th.ws.send("set_high-low", "false");
+      } else {
+        high_low_switch.switch_state();
+        th.ws.send("set_high-low", "true");
+      }
+    });
+    sum_strips_switch.handlerEvent("click", function () {
+      if (sum_strips_switch.getState()) {
+        sum_strips_switch.switch_state();
+        high_low_switch.enable();
+        th.ws.send("set_sum_strips", "false");
+      } else {
+        sum_strips_switch.switch_state();
+        high_low_switch.disable();
+        th.ws.send("set_sum_strips", "true");
+      }
+    });
   }
 
   updateProfiles(axis, mode, data) {
@@ -966,7 +1008,6 @@ class MainSectionGraphs {
       default:
         return;
     }
-    console.log(graph);
     graph[0].loadData(data);
   }
 

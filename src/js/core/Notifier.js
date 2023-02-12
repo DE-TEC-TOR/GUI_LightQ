@@ -27,7 +27,6 @@ class Notifier {
     let _msg = Util.isValid(msg) ? msg : "";
     let _type = "";
     let _delay = Util.isValidNumber(delay) ? delay : 5;
-
     // Select color and icon
     switch (type) {
       case "e":
@@ -75,6 +74,13 @@ class Notifier {
     let _msg = Util.isValid(msg) ? msg : "Confirm?";
     let _title = Util.isValid(title) ? title : "Confirm";
     alertify.confirm(_title, _msg, success, cancel);
+  }
+  /**
+   * Remove all pop-up notifications from screen
+   *
+   */
+  dismissAll() {
+    alertify.dismissAll();
   }
 }
 

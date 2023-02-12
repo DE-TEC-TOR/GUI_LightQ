@@ -33,3 +33,8 @@ body {
   box-shadow: 0.25rem 0.25rem 0.6rem rgba(0, 0, 0, 0.05),
     0 0.5rem 1.125rem rgba(75, 0, 0, 0.05);
 }
+
+.switches-row {
+  display: flex;
+  justify-content: center;
+}

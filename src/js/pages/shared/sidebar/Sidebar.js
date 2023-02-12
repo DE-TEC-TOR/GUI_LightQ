@@ -72,7 +72,7 @@ class Sidebar {
       datetime: "",
     };
     this.bkg_settings = {
-      sampling_rate: "100", //to be set to 1000
+      sampling_rate: "1000",
       sampling_mode: "0",
       first_channel: "1",
       use_pos_calib: "false",
@@ -770,10 +770,7 @@ class Sidebar {
     );
     //Delete button
     this.modal.addButton("btn_delete", "danger", "Discard", false, function () {
-      let cluster = {
-        file_list: [],
-      };
-      th.ws.send("delete_file", JSON.stringify(cluster));
+      th.ws.send_to_logger("discard_all_files");
       th.modal.hide();
     });
     //Save button
@@ -811,7 +808,6 @@ class Sidebar {
       data = this.filesList.intDataFiles;
       modalTitle = "Integral data file list";
     }
-    console.log(data);
     let apply = "";
     let calib_filename_modal = "";
     let select_calibration = new SelectBox("select_calibration_modal", "Calib");
@@ -839,7 +835,7 @@ class Sidebar {
       //--------------------------------------LOGBOOK MODAL--------------------------------------//
       this.modal.setTitle(modalTitle);
       this.modal.setBody(
-        $("<table>", { class: "table" })
+        $("<table>", { class: "table modal-table" })
           .append(
             $("<thead>")
               .append(
@@ -990,44 +986,105 @@ class Sidebar {
           if ($("#download_titles").length) $("#download_titles").remove();
           if ($("#download_links_row").length)
             $("#download_links_row").remove();
-          //DEVICES WITH ONLY INTEGRAL MODULE
-          $("#measuresList")
-            .append(
-              $("<tr>", { id: "download_titles" })
-                .append($("<th>", { scope: "col", html: " " }))
-                .append($("<th>", { scope: "col", html: "DOWNLOAD DATA" }))
-                .append($("<th>", { scope: "col", html: "DOWNLOAD NOTES" }))
-            )
-            .append(
-              $("<tr>", { class: "download_links", id: "download_links_row" })
-                .append($("<td>", { scope: "row", class: "align-middle" }))
-                .append(
-                  $("<td>", { class: "align-middle" }).append(
-                    $("<div>", { class: "btn-success" }).append(
-                      $("<a>", {
-                        id: "link_d",
-                        href: configs.dataFolder + get_html + "_profileINT.txt",
-                        target: "_blank",
-                        download: get_html + "_profileINT.txt",
-                        html: "Data",
-                      })
+          if (mode == "intData") {
+            //DEVICES WITH ONLY INTEGRAL MODULE
+            $("#measuresList")
+              .append(
+                $("<tr>", { id: "download_titles" })
+                  .append($("<th>", { scope: "col", html: " " }))
+                  .append($("<th>", { scope: "col", html: "DOWNLOAD INT" }))
+                  .append($("<th>", { scope: "col", html: " " }))
+                  .append($("<th>", { scope: "col", html: "DOWNLOAD NOTES" }))
+              )
+              .append(
+                $("<tr>", { class: "download_links", id: "download_links_row" })
+                  .append($("<td>", { scope: "row", class: "align-middle" }))
+                  .append(
+                    $("<td>", { class: "align-middle" }).append(
+                      $("<div>", { class: "btn-success" }).append(
+                        $("<a>", {
+                          id: "link_d",
+                          href:
+                            configs.dataFolder + get_html + "_profileINT.csv",
+                          target: "_blank",
+                          download: get_html + "_profileINT.csv",
+                          html: "INT file",
+                        })
+                      )
                     )
                   )
-                )
-                .append(
-                  $("<td>", { class: "align-middle" }).append(
-                    $("<div>", { class: "btn-success" }).append(
-                      $("<a>", {
-                        id: "link_n",
-                        href: configs.dataFolder + get_html + "_notes.txt",
-                        target: "_blank",
-                        download: get_html + "_notes.txt",
-                        html: "Notes",
-                      })
+                  .append($("<td>", { scope: "row", class: "align-middle" }))
+                  .append(
+                    $("<td>", { class: "align-middle" }).append(
+                      $("<div>", { class: "btn-success" }).append(
+                        $("<a>", {
+                          id: "link_n",
+                          href: configs.dataFolder + get_html + "_notes.txt",
+                          target: "_blank",
+                          download: get_html + "_notes.txt",
+                          html: "Notes",
+                        })
+                      )
                     )
                   )
-                )
-            );
+              );
+          } else if (mode == "posData") {
+            //DEVICES WITH ONLY INTEGRAL MODULE
+            $("#measuresList")
+              .append(
+                $("<tr>", { id: "download_titles" })
+                  .append($("<th>", { scope: "col", html: " " }))
+                  .append($("<th>", { scope: "col", html: "DOWNLOAD X" }))
+                  .append($("<th>", { scope: "col", html: "DOWNLOAD Y" }))
+                  .append($("<th>", { scope: "col", html: "DOWNLOAD NOTES" }))
+              )
+              .append(
+                $("<tr>", {
+                  class: "download_links",
+                  id: "download_links_row",
+                })
+                  .append($("<td>", { scope: "row", class: "align-middle" }))
+                  .append(
+                    $("<td>", { class: "align-middle" }).append(
+                      $("<div>", { class: "btn-success" }).append(
+                        $("<a>", {
+                          id: "link_d",
+                          href: configs.dataFolder + get_html + "_profileX.csv",
+                          target: "_blank",
+                          download: get_html + "_profileX.csv",
+                          html: "X file",
+                        })
+                      )
+                    )
+                  )
+                  .append(
+                    $("<td>", { class: "align-middle" }).append(
+                      $("<div>", { class: "btn-success" }).append(
+                        $("<a>", {
+                          id: "link_d",
+                          href: configs.dataFolder + get_html + "_profileY.csv",
+                          target: "_blank",
+                          download: get_html + "_profileY.csv",
+                          html: "Y file",
+                        })
+                      )
+                    )
+                  )
+                  .append(
+                    $("<td>", { class: "align-middle" }).append(
+                      $("<div>", { class: "btn-success" }).append(
+                        $("<a>", {
+                          id: "link_n",
+                          href: configs.dataFolder + get_html + "_notes.txt",
+                          target: "_blank",
+                          download: get_html + "_notes.txt",
+                          html: "Notes",
+                        })
+                      )
+                    )
+                  )
+              );
+          }
         });
       } else {
         $("#measuresList").append(
@@ -1038,7 +1095,7 @@ class Sidebar {
       this.modal.addButton(
         "btn_download",
         "outline-success",
-        '<span class="mdi mdi-briefcase-download"> Download selected</span>',
+        '<span class="mdi mdi-briefcase-download">Download selected</span>',
         false,
         function () {
           let names = [];
@@ -1068,10 +1125,12 @@ class Sidebar {
             "Download?",
             confirm_text,
             function () {
+              let datetime = formatDate(new Date());
               let cluster = {
+                datetime: datetime,
                 file_list: names,
                 include: "false",
-                IP_addr: DET_CONFIG.ws_address,
+                IP_addr: configs.ws_address,
               };
               if (mode == "posData") {
                 th.ws.send_to_logger(
@@ -1160,7 +1219,13 @@ class Sidebar {
           use_calib: apply,
           calib_file: calib_filename_modal,
         };
-        th.ws.send_to_logger("log_load_int_file", JSON.stringify(file_to_load));
+        let load_msg = "";
+        if (mode == "intData") {
+          load_msg = "log_load_int_file";
+        } else if (mode == "posData") {
+          load_msg = "log_load_profile_files";
+        }
+        th.ws.send_to_logger(load_msg, JSON.stringify(file_to_load));
         th.ntf.notify("Loading run data... Please wait", "w", 1000);
         th.modal.hide();
       });
@@ -1471,9 +1536,7 @@ class Sidebar {
     this.modal.setTitle("Save / Discard Background Run");
     this.modal.setBody(
       '<div class="input-group">\n' +
-        '  <div class="input-group-prepend">\n' +
-        '    <span class="input-group-text">Filename</span>\n' +
-        "  </div>\n" +
+        '  <span class="input-group-text">Filename</span>\n' +
         '  <textarea id="bkg_filename" class="form-control" aria-label="With textarea"></textarea>\n' +
         "</div>"
     );
@@ -1490,7 +1553,7 @@ class Sidebar {
       let flag = false;
       let get_html = $("#bkg_filename").val();
       th.filesList.backgroundFiles.map((x) => {
-        let check_string = x; //.substring(0, th.calib_filelist[ck].length - 6);
+        let check_string = x;
         if (get_html == check_string) {
           flag = true;
         }
@@ -1595,6 +1658,7 @@ class Sidebar {
           file_list: [get_html],
           include: "false",
           IP_addr: th.detConfig.ws_address,
+          datetime: formatDate(new Date()),
         };
         th.ntf.confirm(
           "Download?",
@@ -1842,14 +1906,13 @@ class Sidebar {
         this.startRecordBackground();
       }
     } else {
-      console.log("WebSocket is not connected!");
       this.ntf.conn_error();
     }
   }
 
   startRecordBackground() {
     this.ntf.notify("Background DAQ starting...", "s");
-    this.send("bkg_measure_start", JSON.stringify(this.bkg_settings));
+    this.ws.send("bkg_measure_start", JSON.stringify(this.bkg_settings));
     this.setDaqStatus(4);
     this.configs_array.map((x) => x.disable());
     this.graph_array.map((x) => {
@@ -1875,7 +1938,7 @@ class Sidebar {
       x.enable_tooltips();
     });
     this.components.acquisition.loader.deactivate();
-    this.components.acquisition.btnBkgDaq.setName("Record background");
+    this.components.background.btnBkgDaq.setName("Record background");
     $("#btn_bkg_acq")
       .removeClass("btn-outline-danger")
       .addClass("btn-outline-success");

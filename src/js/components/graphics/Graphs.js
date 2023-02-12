@@ -83,24 +83,6 @@ export class Graph extends Component {
             ticks: {
               stepSize: this.pitch,
             },
-            // ticks: {
-            //     beginAtZero: true,
-            //     callback: function (tick, index, array) {
-            //         var set_tick = '';
-            //         if(index <= 31){
-            //             set_tick = (index % 8) ? "" : tick;
-            //             if (index == 31) {
-            //                 set_tick = tick;
-            //             }
-            //         }
-            //         else{
-            //             index = index - 30;
-            //             set_tick = (index % 8) ? "" : tick;
-            //         }
-            //         return set_tick;
-            //     },
-            //     autoSkip: false
-            // },
           },
           y: {
             display: true,
@@ -108,7 +90,16 @@ export class Graph extends Component {
               display: true,
               text: this.label,
             },
-            ticks: {},
+            ticks: {
+              beginAtZero: false,
+              callback: (val) => {
+                if (val > 10000) {
+                  return val.toExponential(2);
+                } else {
+                  return val;
+                }
+              },
+            },
             grid: {
               drawOnChartArea: false,
             },
@@ -128,16 +119,16 @@ export class Graph extends Component {
             intersect: false,
             callbacks: {
               title: function (context) {
-                return "Point: " + context[0].parsed.x;
+                return "Point: " + context[0].parsed.index;
               },
               label: function (context) {
-                return (
-                  "(" +
-                  context.parsed.x +
-                  " ; " +
-                  context.parsed.y.toFixed(2) +
-                  ")"
-                );
+                let item = context.parsed.y;
+                if (item > 10000) {
+                  item = item.toExponential(2);
+                } else {
+                  item = item.toFixed(2);
+                }
+                return "(" + context.parsed.x + " ; " + item + ")";
               },
             },
           },
@@ -713,6 +704,16 @@ export class GraphInt extends Component {
               display: true,
               text: label,
             },
+            ticks: {
+              beginAtZero: false,
+              callback: (val) => {
+                if (val > 10000) {
+                  return val.toExponential(2);
+                } else {
+                  return val;
+                }
+              },
+            },
             grid: {
               drawOnChartArea: false,
             },
@@ -731,13 +732,13 @@ export class GraphInt extends Component {
                 return "Point: " + context[0].parsed.x;
               },
               label: function (context) {
-                return (
-                  "(" +
-                  context.parsed.x +
-                  " ; " +
-                  context.parsed.y.toFixed(2) +
-                  ")"
-                );
+                let item = context.parsed.y;
+                if (item > 10000) {
+                  item = item.toExponential(2);
+                } else {
+                  item = item.toFixed(2);
+                }
+                return "(" + context.parsed.x + " ; " + item + ")";
               },
             },
           },
@@ -841,7 +842,7 @@ export class GraphInt extends Component {
 
   loadData(newData) {
     let th = this;
-    this.createLabels();
+    this.reset();
     let data = JSON.parse(newData);
     let sample_id = data.ID;
     let int_data = data.Data;

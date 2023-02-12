@@ -1126,7 +1126,6 @@ export default function create_daq_ui(dev_name, hasPos) {
     //---------------------------------------------------------------------NEXTQ-Q360---------------------------------------------------------------------//
     case "NextQ":
     case "Q360":
-    case "LightQ":
       $(ID_MAIN_CONTENT)
         .empty()
         .append(
@@ -1678,6 +1677,293 @@ export default function create_daq_ui(dev_name, hasPos) {
                     .append(
                       $("<div>", {
                         id: "area_reset_zoom_projy",
+                        class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
+                      })
+                    )
+                )
+            )
+            .append(
+              $("<div>", {
+                id: "sidebar",
+                class: "col-xl-2 col-lg-12 col-md-12 col-sm-12",
+              })
+            )
+        );
+      break;
+    case "LightQ":
+      $(ID_MAIN_CONTENT)
+        .empty()
+        .append(
+          $("<div>", {
+            class: "row",
+            style: "padding-top: 20px;",
+          })
+            .append(
+              $("<div>", {
+                id: "",
+                class: "col-xl-10 col-lg-12 col-md-12 col-sm-12",
+              })
+                .append(
+                  $("<div>", {
+                    id: "",
+                    class: "col-xl-12 col-lg-12 col-md-12 col-sm-12",
+                  }).append(
+                    $("<div>", {
+                      class: "row switches-row",
+                    })
+                      .append(
+                        $("<div>", {
+                          id: "area_switch_HI_anode",
+                          class: "col-2",
+                        })
+                      )
+                      .append(
+                        $("<div>", {
+                          id: "area_switch_high_low",
+                          class: "col-3",
+                        })
+                      )
+                      .append(
+                        $("<div>", {
+                          id: "area_switch_sum_strips",
+                          class: "col-2",
+                        })
+                      )
+                  )
+                )
+                .append(
+                  $("<div>", {
+                    class: "row",
+                  })
+                    .append(
+                      $("<div>", {
+                        id: "area_graph_profile_x",
+                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_graph_profile_y",
+                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                      })
+                    )
+                )
+                .append(
+                  $("<div>", {
+                    class: "row justify-content-center",
+                  })
+                    .append(
+                      $("<div>", {
+                        id: "area_space_profile_x",
+                        class: "col-xs-5 col-sm-5 col-md-5 col-lg-5",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_reset_zoom_x",
+                        class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_space_profile_y",
+                        class: "col-xs-5 col-sm-5 col-md-5 col-lg-5",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_reset_zoom_y",
+                        class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
+                      })
+                    )
+                )
+                .append(
+                  $("<div>", {
+                    class: "row",
+                  })
+                    .append(
+                      $("<div>", {
+                        id: "area_graph_last_profile_x",
+                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_graph_last_profile_y",
+                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                      })
+                    )
+                )
+                .append(
+                  $("<div>", {
+                    class: "row justify-content-center",
+                  })
+                    .append(
+                      $("<div>", {
+                        id: "area_space_profile_x_diff",
+                        class: "col-xs-5 col-sm-5 col-md-5 col-lg-5",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_reset_zoom_x_diff",
+                        class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_space_profile_y_diff",
+                        class: "col-xs-5 col-sm-5 col-md-5 col-lg-5",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_reset_zoom_y_diff",
+                        class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
+                      })
+                    )
+                )
+                .append(
+                  $("<div>", {
+                    class: "row justify-content-center",
+                  })
+                    .append(
+                      $("<div>", {
+                        id: "area_switch_axes_x",
+                        class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_pitch_axes_x",
+                        class: "col-xs-2 col-sm-2 col-md-2 col-lg-2",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_offset_axes_x",
+                        class: "col-xs-2 col-sm-2 col-md-2 col-lg-2",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_reset_default_x",
+                        class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_switch_axes_y",
+                        class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_pitch_axes_y",
+                        class: "col-xs-2 col-sm-2 col-md-2 col-lg-2",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_offset_axes_y",
+                        class: "col-xs-2 col-sm-2 col-md-2 col-lg-2",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_reset_default_y",
+                        class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
+                      })
+                    )
+                )
+                .append(
+                  $("<div>", {
+                    class: "row",
+                  })
+                    .append(
+                      $("<div>", {
+                        id: "area_graph_int_1",
+                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_graph_int_2",
+                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                      })
+                    )
+                )
+                .append(
+                  $("<div>", {
+                    class: "row justify-content-center",
+                  })
+                    .append(
+                      $("<div>", {
+                        id: "area_space_int_1",
+                        class: "col-xs-5 col-sm-5 col-md-5 col-lg-5",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_reset_zoom_int_1",
+                        class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_space_int_2",
+                        class: "col-xs-5 col-sm-5 col-md-5 col-lg-5",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_reset_zoom_int_2",
+                        class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
+                      })
+                    )
+                )
+                .append(
+                  $("<div>", {
+                    class: "row",
+                  })
+                    .append(
+                      $("<div>", {
+                        id: "area_graph_int_1_diff",
+                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_graph_int_2_diff",
+                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                      })
+                    )
+                )
+                .append(
+                  $("<div>", {
+                    class: "row justify-content-center",
+                  })
+                    .append(
+                      $("<div>", {
+                        id: "area_space_int_1_diff",
+                        class: "col-xs-5 col-sm-5 col-md-5 col-lg-5",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_reset_zoom_int_1_diff",
+                        class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_space_int_2_diff",
+                        class: "col-xs-5 col-sm-5 col-md-5 col-lg-5",
+                      })
+                    )
+                    .append(
+                      $("<div>", {
+                        id: "area_reset_zoom_int_2_diff",
                         class: "col-xs-1 col-sm-1 col-md-1 col-lg-1",
                       })
                     )

@@ -9,7 +9,6 @@ export let list = {};
 
 const start_download = () => {
   document.getElementById("download_zip").click();
-  ntf.notify("Download ongoing ... Plese wait", "i", 3);
   document.getElementById("download_zip").remove();
   return;
 };

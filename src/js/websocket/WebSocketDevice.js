@@ -209,7 +209,7 @@ class WebSocketDevice extends WebsocketController {
           wsActions.saveBackground(this.components.sidebar, msg.value);
           break;
         case "background_files_saved": //feedback after successful saving of background files
-          this.ntf.notify("Background acquisition succesfully saved", "s");
+          this.ntf.notify("Background acquisition successfully saved", "s");
           break;
         case "update_background_list": //update background file list and open modal
           wsActions.updateBackgroundList(
@@ -249,6 +249,7 @@ class WebSocketDevice extends WebsocketController {
             })
           );
           Util.trig("main_content", "start_download");
+          this.ntf.notify("Download ongoing ... Please wait", "i", 3);
           break;
         case "message":
           Util.trig("message", "update", msg.value);
@@ -288,6 +289,10 @@ class WebSocketDevice extends WebsocketController {
           break;
         case "file_deleted": //feedback after succesful data file removal
           this.ntf.notify("Data deleted from memory", "e");
+          break;
+        case "load_completed":
+          this.ntf.dismissAll();
+          this.ntf.notify("Data correctly loaded", "s");
           break;
         case "calibration_saved": //feedback after succesful calibration file saving
           this.ntf.notify("Calibration successfully saved", "s");

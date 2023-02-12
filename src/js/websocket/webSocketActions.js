@@ -106,7 +106,8 @@ actions.updateCalibList = (
 
 actions.updateBackgroundList = (sidebar, data, status = "hidden", notifier) => {
   let list = sidebar.updateBackgroundFileList(data);
-  if (status == "init") sidebar.updateBackgroundController();
+  if (status == "init" || status == "hidden")
+    sidebar.updateBackgroundController();
   if (status == "modal") {
     if (list.length > 0) {
       sidebar.fillLogbookBackgroundModal();
