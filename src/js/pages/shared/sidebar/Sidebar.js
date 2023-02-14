@@ -1859,8 +1859,7 @@ class Sidebar {
 
   startDAQ() {
     this.ntf.notify("DAQ starting...", "i");
-    let date_acq = new Date();
-    this.settings.datetime = formatDate(date_acq); //updating the run timestamp
+    this.settings.datetime = formatDate(new Date()); //updating the run timestamp
     this.ws.send("measure_start", JSON.stringify(this.settings));
     this.setDaqStatus(1);
     this.toggleGUIinteractions("off");
