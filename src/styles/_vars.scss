@@ -7,38 +7,11 @@
   font-style: normal;
 }
 
-@font-face {
-  font-family: "MontserratBold";
-  src: url("../fonts/Montserrat/bold/montserrat-bold.woff") format("woff"),
-    url("../fonts/Montserrat/bold/montserrat-bold.woff2") format("woff2");
-  font-weight: 700;
-}
-
-@font-face {
-  font-family: "MontserratItalic";
-  src: url("../fonts/Montserrat/italic/montserrat-italic.woff") format("woff"),
-    url("../fonts/Montserrat/italic/montserrat-italic.woff2") format("woff2");
-  font-style: italic;
-}
-
-@font-face {
-  font-family: "MontserratBoldItalic";
-  src: url("../fonts/Montserrat/boldItalic/montserrat-bolditalic.woff")
-      format("woff"),
-    url("../fonts/Montserrat/boldItalic/montserrat-bolditalic.woff2")
-      format("woff2");
-  font-weight: 700;
-  font-style: italic;
-}
-
 // Body
 $body-bg: #ffffff;
 
 // Typography
 $font-family-sans-serif: "Montserrat", sans-serif;
-$font-family-bold: "MontserratBold", sans-serif;
-$font-family-italic: "MontserratItalic", sans-serif;
-$font-family-bold-italic: "MontserratBoldItalic", sans-serif;
 $font-size-base: 0.9rem;
 $line-height-base: 1.6;
 

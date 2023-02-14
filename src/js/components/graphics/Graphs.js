@@ -4,7 +4,7 @@
  * @author : MattF
  * @company : DE.TEC.TOR. srl
  * @version : 1.0.0
- */
+ **/
 import Chart from "chart.js/auto";
 import chartjs_plugin_zoom from "chartjs-plugin-zoom";
 import Util from "../../core/Util";
@@ -19,6 +19,7 @@ export class Graph extends Component {
     id,
     label,
     title = "",
+    setPtc = null,
     numberOfPoints = null,
     pitch = null,
     aspRat = 2
@@ -27,24 +28,32 @@ export class Graph extends Component {
     this.label = label;
     this.title = title;
     this.labels = [];
+    this.completeLabels = [];
     this.zoomedLabels = [];
     this.zoomedData = [];
     this.numberOfPoints = numberOfPoints == null ? 10 : numberOfPoints;
     this.defaultData = [];
+    this.completeData = [];
     for (let i = 0; i < this.numberOfPoints; ++i) {
       this.labels.push(i);
+      this.completeLabels.push(i);
     }
     this.labels.forEach((i) => {
       this.defaultData.push({
         x: i,
         y: 0,
       });
+      this.completeData.push({
+        x: i,
+        y: 0,
+      });
     });
     this.pitch = pitch == null ? 6 : pitch;
+    this.setPtc = setPtc;
+    this.setOff = (this.numberOfPoints * setPtc) / 2;
     this.aspect_ratio = aspRat;
     /* Graph HTML values */
-    this.height = "270px";
-    this.width = "100%";
+    this.height = "350px";
     /* Graph object */
     this.graph = null;
     /* Graph colors available */
@@ -71,6 +80,7 @@ export class Graph extends Component {
       },
       options: {
         aspectRatio: this.aspect_ratio,
+        maintainAspectRatio: false,
         responsive: true,
         scales: {
           x: {
@@ -94,9 +104,9 @@ export class Graph extends Component {
               beginAtZero: false,
               callback: (val) => {
                 if (val > 10000) {
-                  return val.toExponential(2);
+                  return val.toExponential(1);
                 } else {
-                  return val;
+                  return val.toFixed(1);
                 }
               },
             },
@@ -105,10 +115,6 @@ export class Graph extends Component {
             },
           },
         },
-        // annotation: {
-        //     annotations: [
-        //     ]
-        // },
         plugins: {
           title: {
             display: true,
@@ -119,7 +125,7 @@ export class Graph extends Component {
             intersect: false,
             callbacks: {
               title: function (context) {
-                return "Point: " + context[0].parsed.index;
+                return "Point: " + context[0].dataIndex;
               },
               label: function (context) {
                 let item = context.parsed.y;
@@ -178,6 +184,9 @@ export class Graph extends Component {
         },
       },
     };
+    /* Graph axis status */
+    this.axisStatus = 0;
+    this.anodeConfig = { HIconfig: false, hl: false, sum: false };
   }
 
   createLabels() {
@@ -440,37 +449,55 @@ export class Graph extends Component {
     this.graph.options.plugins.tooltip.enabled = true;
   }
 
+  setAnodeConfig(HIanode, hl, sum) {
+    this.anodeConfig.HIconfig = HIanode;
+    this.anodeConfig.hl = hl;
+    this.anodeConfig.sum = sum;
+  }
+
+  switchAnodeConfig(HIanode, hl, sum) {
+    this.setAnodeConfig(HIanode, hl, sum);
+    this.defaultData = this.plotData(this.completeData);
+    this.labels = this.plotLabels(this.defaultData);
+    this.createLabels();
+  }
+
   reset_x_axis() {
+    let new_labels = [];
     let new_data = [];
-    this.defaultData.forEach((x, i) => {
-      this.labels[i] = i;
+    this.completeData.forEach((x, i) => {
+      new_labels.push(i);
       new_data.push({
         x: i,
         y: x.y,
       });
     });
+    this.completeLabels = new_labels;
+    this.completeData = new_data;
+    this.axisStatus = 0;
     this.config.options.scales.x.title.text = "channel";
-    this.defaultData = new_data;
-    this.graph.data.datasets[0].data = new_data;
-    this.graph.update();
+    this.defaultData = this.plotData(this.completeData);
+    this.labels = this.plotLabels(this.defaultData);
+    this.createLabels();
   }
 
-  change_x_axis(ptc, off, set_pitch = 1, label = "mm") {
+  change_x_axis(ptc, off, label = "mm") {
     let new_labels = [];
     let new_data = [];
-    this.defaultData.forEach((x, i) => {
+    this.completeData.forEach((x, i) => {
       new_labels.push((i * ptc - off).toFixed(1));
       new_data.push({
-        x: (i * ptc - off).toFixed(1),
+        x: new_labels[i],
         y: x.y,
       });
     });
-    this.labels = new_labels;
-    this.graph.data.labels = new_labels;
+    this.axisStatus = 1;
+    this.completeLabels = new_labels;
+    this.completeData = new_data;
     this.config.options.scales.x.title.text = label;
-    this.defaultData = new_data;
-    this.graph.data.datasets[0].data = new_data;
-    this.graph.update();
+    this.defaultData = this.plotData(this.completeData);
+    this.labels = this.plotLabels(this.defaultData);
+    this.createLabels();
   }
 
   update_post_analysis(
@@ -504,6 +531,77 @@ export class Graph extends Component {
     this.graph.update();
   }
 
+  plotData(data) {
+    let new_data = [];
+    let cnt = 0;
+    if (this.anodeConfig.HIconfig) {
+      if (this.anodeConfig.sum) {
+        let dataHi = [];
+        data.forEach((x, i) => {
+          if (!(i % 2)) {
+            dataHi.push(x);
+          }
+        });
+        let dataLow = [];
+        data.forEach((x, i) => {
+          if (i % 2) {
+            dataLow.push(x);
+          }
+        });
+        return dataHi.map((el, i) => {
+          return {
+            x: this.axisStatus ? i * this.setPtc * 2 - this.setOff : i,
+            y: el.y + dataLow[i].y,
+          };
+        });
+      } else if (this.anodeConfig.hl) {
+        data.forEach((x, i) => {
+          if (!(i % 2)) {
+            new_data.push({
+              x: this.axisStatus ? cnt * this.setPtc * 2 - this.setOff : cnt,
+              y: x.y,
+            });
+            cnt++;
+          }
+        });
+      } else {
+        data.forEach((x, i) => {
+          if (i % 2) {
+            new_data.push({
+              x: this.axisStatus ? cnt * this.setPtc * 2 - this.setOff : cnt,
+              y: x.y,
+            });
+            cnt++;
+          }
+        });
+      }
+    } else {
+      data.forEach((x, i) => {
+        new_data.push({
+          x: this.axisStatus ? i * this.setPtc - this.setOff : i,
+          y: x.y,
+        });
+      });
+    }
+    return new_data;
+  }
+
+  plotLabels(data) {
+    let labels = [];
+    data.forEach((x, i) => {
+      if (this.axisStatus == 0) {
+        labels.push(i);
+      } else {
+        labels.push(
+          this.anodeConfig.HIconfig
+            ? i * this.setPtc * 2 - this.setOff
+            : i * this.setPtc - this.setOff
+        );
+      }
+    });
+    return labels;
+  }
+
   updateData(newData) {
     let Nlines = this.graph.data.datasets.length;
     if (Nlines > 1) {
@@ -515,13 +613,14 @@ export class Graph extends Component {
     let new_data = [];
     data.forEach((x, i) => {
       new_data.push({
-        x: this.labels[i],
+        x: this.completeLabels[i],
         y: x,
       });
     });
-    this.defaultData = new_data;
-    this.graph.data.datasets[0].data = new_data;
-    this.graph.update();
+    this.completeData = new_data;
+    this.defaultData = this.plotData(this.completeData);
+    this.labels = this.plotLabels(this.defaultData);
+    this.createLabels();
   }
 
   updateDataDiff(newData) {
@@ -536,17 +635,18 @@ export class Graph extends Component {
     let int_time = data.slice(0, 1);
     let data_array = data.slice(1, this.numberOfPoints + 1);
     let new_data = [];
-    for (let i = 0; i < this.numberOfPoints; ++i) {
+    data_array.forEach((x, i) => {
       new_data.push({
-        x: this.labels[i],
-        y: data_array[i],
+        x: this.completeLabels[i],
+        y: x,
       });
-    }
-    this.defaultData = new_data;
-    this.graph.data.datasets[0].data = new_data; //data_array;
+    });
+    this.completeData = new_data;
+    this.defaultData = this.plotData(this.completeData);
+    this.labels = this.plotLabels(this.defaultData);
     this.config.options.plugins.title.text =
       "Profile " + axis + " counts in last " + int_time + " ms";
-    this.graph.update();
+    this.createLabels();
   }
 
   updateDataZoom(limits) {
@@ -634,8 +734,8 @@ export class Graph extends Component {
     super.draw(father);
     $(father).append(
       $("<canvas>", {
-        class: "generic-plot",
         id: this.getId(),
+        style: "height:" + this.height + ";",
       })
     );
 
@@ -663,8 +763,7 @@ export class GraphInt extends Component {
       });
     });
     this.title = title;
-    this.height = "270px";
-    this.width = "100%";
+    this.height = "350px";
     this.aspect_ratio = aspRat;
     /* Graph object */
     this.graph = null;
@@ -690,6 +789,7 @@ export class GraphInt extends Component {
       },
       options: {
         aspectRatio: this.aspect_ratio,
+        maintainAspectRatio: false,
         responsive: true,
         scales: {
           x: {
@@ -708,9 +808,9 @@ export class GraphInt extends Component {
               beginAtZero: false,
               callback: (val) => {
                 if (val > 10000) {
-                  return val.toExponential(2);
+                  return val.toExponential(1);
                 } else {
-                  return val;
+                  return val.toFixed(1);
                 }
               },
             },
@@ -729,7 +829,7 @@ export class GraphInt extends Component {
             intersect: false,
             callbacks: {
               title: function (context) {
-                return "Point: " + context[0].parsed.x;
+                return "Point: " + context[0].dataIndex;
               },
               label: function (context) {
                 let item = context.parsed.y;
@@ -879,7 +979,7 @@ export class GraphInt extends Component {
     $(father).append(
       $("<canvas>", {
         id: this.getId(),
-        class: "generic-plot",
+        style: "height:" + this.height + ";",
       })
     );
 
@@ -935,7 +1035,7 @@ export class GraphRound extends Component {
     };
     this.labels = [];
     this.defaultData = [100, 0];
-    this.height = "auto";
+    this.height = "100px";
     this.width = width;
     this.graph = null;
   }
@@ -1022,13 +1122,15 @@ export class GraphRound extends Component {
     super.draw(father);
 
     $(father).append(
-      $("<canvas>", {
-        class: "text-center",
-        id: this.getId(),
-        width: this.width,
-        height: this.height,
-        style: "margin-bottom: 8px; max-width: 110px",
-      })
+      $("<div>", {
+        style:
+          "margin: auto; padding-bottom: 10px; width: 35%; min-width:100px; position:relative;",
+      }).append(
+        $("<canvas>", {
+          class: "text-center",
+          id: this.getId(),
+        })
+      )
     );
 
     this.createGraph();

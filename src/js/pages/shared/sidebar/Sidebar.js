@@ -43,6 +43,7 @@ class Sidebar {
     notifier,
     webSock,
     pageGraphs,
+    profileGraphs,
     inputCalib = DEF_INPUT_CALIB
   ) {
     this.ntf = notifier;
@@ -97,6 +98,7 @@ class Sidebar {
     };
     this.configs_array = [];
     this.graph_array = pageGraphs;
+    this.profile_graph_array = profileGraphs;
     this.calibFields = inputCalib;
     this.panels = { shared: {}, daq: {}, posCalib: {}, rngCalib: {} };
     this.modal = modal; //reference to the main page shared modal
@@ -406,7 +408,9 @@ class Sidebar {
     btn_reset_alarms.addClickAction(function () {
       if (th.ws.isConnected()) {
         th.ws.send("reset_alarms");
-        Util.trig("device_status", "update", 0);
+        // Util.trig("device_status", "update", 0);
+        th.setControlUnitStatus(0);
+        th.controlUnitStatus = 0;
         th.errorList = [];
       } else {
         th.ntf.conn_error();
@@ -420,9 +424,6 @@ class Sidebar {
       1
     );
     btn_reset_counters.addClickAction(function () {
-      // th.graph_array.forEach((x) => {
-      //   x.reset();
-      // });
       if (th.ws.isConnected()) {
         if (th.daqStatus == 1) {
           th.ntf.notify(
@@ -541,7 +542,7 @@ class Sidebar {
           th.ws.send_to_logger("log_scan_background_files");
         }
       } else {
-        console.log("SOCK is not connected!");
+        console.log("Device not connected!");
         th.ntf.conn_error();
       }
     });
@@ -558,7 +559,7 @@ class Sidebar {
         if (th.ws.isConnected()) {
           th.ws.send_to_logger("log_scan_profile_calib_files");
         } else {
-          console.log("SOCK is not connected!");
+          console.log("Device not connected!");
           th.ntf.conn_error();
         }
       });
@@ -599,7 +600,7 @@ class Sidebar {
           th.fillSaveCalibrationModal("pos");
           th.modal.show();
         } else {
-          console.log("SOCK is not connected!");
+          console.log("Device not connected!");
           th.ntf.conn_error();
         }
       });
@@ -616,7 +617,7 @@ class Sidebar {
         if (th.ws.isConnected()) {
           th.ws.send_to_logger("log_scan_range_calib_files");
         } else {
-          console.log("SOCK is not connected!");
+          console.log("Device not connected!");
           th.ntf.conn_error();
         }
       });
@@ -655,7 +656,7 @@ class Sidebar {
           th.fillSaveCalibrationModal("rng");
           th.modal.show();
         } else {
-          console.log("SOCK is not connected!");
+          console.log("Device not connected!");
           th.ntf.conn_error();
         }
       });
@@ -881,14 +882,17 @@ class Sidebar {
                       html: "",
                       class: "tdselect",
                     }).append(
-                      $("<label>", {
-                        class: "select-all-container",
-                        html: "All",
-                      })
+                      $("<span>")
+                        .append($("<p>", { class: "check-label", html: "All" }))
                         .append(
                           $("<input>", { type: "checkbox", id: "select_all" })
                         )
-                        .append($("<span>", { class: "checkmark" }))
+                        .append(
+                          $("<label>", {
+                            for: "select_all",
+                            class: "select-all-container fas",
+                          })
+                        )
                     )
                   )
               )
@@ -956,12 +960,21 @@ class Sidebar {
               .append(
                 $("<td>", { class: "tdselect" }).append(
                   $("<div>", { class: "form-check" }).append(
-                    $("<input>", {
-                      class: "form-check-input selected-file",
-                      type: "checkbox",
-                      id: "select_" + index,
-                      "data-name": meas.name,
-                    })
+                    $("<p>")
+                      .append(
+                        $("<input>", {
+                          class: "form-check-input selected-file",
+                          type: "checkbox",
+                          id: "select_" + index,
+                          "data-name": meas.name,
+                        })
+                      )
+                      .append(
+                        $("<label>", {
+                          for: "select_" + index,
+                          class: "fas",
+                        })
+                      )
                   )
                 )
               )
@@ -1227,6 +1240,9 @@ class Sidebar {
         }
         th.ws.send_to_logger(load_msg, JSON.stringify(file_to_load));
         th.ntf.notify("Loading run data... Please wait", "w", 1000);
+        if (mode == "posData") {
+          th.resetAllProfilePlots();
+        }
         th.modal.hide();
       });
       // EDIT NOTES FILE
@@ -1420,7 +1436,6 @@ class Sidebar {
                     ? validateNumInput(x.getId(true))
                     : 1)
               );
-              console.log(calib_factors["posXchannels"]);
               th.calibFields.posYchannels.map(
                 (y, idx) =>
                   (calib_factors["posYchannels"][idx] = !isNaN(
@@ -1686,6 +1701,27 @@ class Sidebar {
       x.reset();
     });
   }
+  resetAllProfilePlots() {
+    this.profile_graph_array.forEach((x) => {
+      x.reset();
+    });
+  }
+  stopAllDaq() {
+    this.toggleGUIinteractions("on");
+    this.tuneSettings("stop");
+    this.setDaqStatus(0);
+    this.components.acquisition.loader.deactivate();
+    $("#btn_acq").removeClass("btn-danger").addClass("btn-success");
+    $("#measurePlaySpan").removeClass("mdi-stop").addClass("mdi-play");
+    this.components.acquisition.btnDataStream.setName("Start data stream");
+    $("#btn_data_stream")
+      .removeClass("btn-outline-danger")
+      .addClass("btn-outline-success");
+    this.components.background.btnBkgDaq.setName("Record background");
+    $("#btn_bkg_acq")
+      .removeClass("btn-outline-danger")
+      .addClass("btn-outline-success");
+  }
 
   toggleDaq() {
     let th = this;
@@ -1825,7 +1861,6 @@ class Sidebar {
     this.ntf.notify("DAQ starting...", "i");
     let date_acq = new Date();
     this.settings.datetime = formatDate(date_acq); //updating the run timestamp
-    console.log(this.settings.datetime);
     this.ws.send("measure_start", JSON.stringify(this.settings));
     this.setDaqStatus(1);
     this.toggleGUIinteractions("off");
@@ -1848,7 +1883,6 @@ class Sidebar {
 
   startDataStream() {
     this.ntf.notify("Data stream starting...", "s");
-    console.log(this.settings);
     this.ws.send("start_data_stream", JSON.stringify(this.settings));
     this.setDaqStatus(2);
     this.toggleGUIinteractions("off");

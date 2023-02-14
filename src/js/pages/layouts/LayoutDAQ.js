@@ -1738,13 +1738,15 @@ export default function create_daq_ui(dev_name, hasPos) {
                     .append(
                       $("<div>", {
                         id: "area_graph_profile_x",
-                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                        class:
+                          "col-xs-12 col-sm-12 col-md-12 col-lg-6 graph-container",
                       })
                     )
                     .append(
                       $("<div>", {
                         id: "area_graph_profile_y",
-                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                        class:
+                          "col-xs-12 col-sm-12 col-md-12 col-lg-6 graph-container",
                       })
                     )
                 )
@@ -1784,13 +1786,15 @@ export default function create_daq_ui(dev_name, hasPos) {
                     .append(
                       $("<div>", {
                         id: "area_graph_last_profile_x",
-                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                        class:
+                          "col-xs-12 col-sm-12 col-md-12 col-lg-6 graph-container",
                       })
                     )
                     .append(
                       $("<div>", {
                         id: "area_graph_last_profile_y",
-                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                        class:
+                          "col-xs-12 col-sm-12 col-md-12 col-lg-6 graph-container",
                       })
                     )
                 )
@@ -1883,13 +1887,15 @@ export default function create_daq_ui(dev_name, hasPos) {
                     .append(
                       $("<div>", {
                         id: "area_graph_int_1",
-                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                        class:
+                          "col-xs-12 col-sm-12 col-md-12 col-lg-6 graph-container",
                       })
                     )
                     .append(
                       $("<div>", {
                         id: "area_graph_int_2",
-                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                        class:
+                          "col-xs-12 col-sm-12 col-md-12 col-lg-6 graph-container",
                       })
                     )
                 )
@@ -1929,13 +1935,15 @@ export default function create_daq_ui(dev_name, hasPos) {
                     .append(
                       $("<div>", {
                         id: "area_graph_int_1_diff",
-                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                        class:
+                          "col-xs-12 col-sm-12 col-md-12 col-lg-6 graph-container",
                       })
                     )
                     .append(
                       $("<div>", {
                         id: "area_graph_int_2_diff",
-                        class: "col-xs-12 col-sm-12 col-md-12 col-lg-6",
+                        class:
+                          "col-xs-12 col-sm-12 col-md-12 col-lg-6 graph-container",
                       })
                     )
                 )

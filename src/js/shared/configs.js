@@ -3,13 +3,13 @@
  *  Contains the main page logic, initializes all needed components
  *
  * @author : MattF
- * @company : DE.TEC.TOR.srl
+ * @company : DE.TEC.TOR. srl
  * @version : 1.0.0
  *
  */
 import favicon from "../../images/LightQ.png";
 //---------------------------------------------DETECTOR CONFIGS----------------------------------//
-let IP_addr = "192.168.0.31";
+let IP_addr = "10.0.0.201";
 let files_path = "http://" + IP_addr + "/files/media/mmcblk0p1/";
 
 const device_configs = {
@@ -27,9 +27,9 @@ const device_configs = {
   nChY: 256,
   nChZ: 0,
   nChInt: 2,
-  posPitch: 1,
+  posPitch: 0.5,
   rngPitch: 0,
-  posResolution: 1,
+  posResolution: 0.5,
   rngResolution: 0,
   favicon: favicon,
   dataFolder: files_path + "data/",

@@ -1,14 +1,9 @@
 // Scientific plots
 canvas {
-  margin: 0 auto;
   user-select: none;
   -moz-user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
-}
-
-.generic-plot {
-  width: 100%;
 }
 
 .plot-container {
@@ -70,4 +65,8 @@ canvas {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.graph-container {
+  position: relative;
 }

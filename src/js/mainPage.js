@@ -45,6 +45,7 @@ export default function initMonitor(detector, notifier, ws) {
     notifier,
     ws,
     mainSection.getGraphs(),
+    mainSection.getProfileGraphs(),
     calibFields
   );
   sidebar.build();

@@ -196,7 +196,6 @@ class WebSocketDevice extends WebsocketController {
           );
           break;
         case "load_profile_calib": //load profile calibration factors from file on screen
-          console.log(msg.value);
           wsActions.loadCalibFile(
             this.components.sidebar,
             JSON.parse(msg.value),
@@ -249,6 +248,7 @@ class WebSocketDevice extends WebsocketController {
             })
           );
           Util.trig("main_content", "start_download");
+          this.ntf.dismissAll();
           this.ntf.notify("Download ongoing ... Please wait", "i", 3);
           break;
         case "message":
@@ -265,7 +265,6 @@ class WebSocketDevice extends WebsocketController {
           break;
         //----------------------------------------logbook/data-calib storage messages
         case "profile_run_list": //open profile files modal
-          console.log(msg.value);
           wsActions.updateRunList(
             this.components.sidebar,
             msg.value,

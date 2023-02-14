@@ -6,13 +6,14 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "bundle.js",
+    clean: true,
   },
   devServer: {
     static: path.resolve(__dirname, "dist"),
     port: 8080,
     hot: true,
   },
-  mode: "development",
+  mode: "production",
   module: {
     rules: [
       {
@@ -51,10 +52,22 @@ module.exports = {
       {
         test: /\.(png|svg|jpg|jpeg|gif)$/i,
         type: "asset/resource",
+        generator: {
+          filename: "images/[hash][ext][query]",
+        },
       },
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/i,
         type: "asset/resource",
+        parser: {
+          dataUrlCondition: {
+            maxSize: 8 * 1024, // 8kb
+          },
+        },
+        generator: {
+          //If emitting file, the file path is
+          filename: "fonts/[hash][ext][query]",
+        },
       },
     ],
   },

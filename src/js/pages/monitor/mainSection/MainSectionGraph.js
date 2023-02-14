@@ -16,6 +16,7 @@ const segmRng = 32;
 
 class MainSectionGraphs {
   constructor(detConfig, notifier, webSock) {
+    this.detConfig = { ...detConfig };
     this.devName = detConfig.devName;
     this.hasPos = detConfig.hasPos;
     this.hasRng = detConfig.hasRng;
@@ -58,6 +59,7 @@ class MainSectionGraphs {
         "graph_profile_x",
         "#",
         "Profile X total counts",
+        this.posResolution,
         this.nChX,
         Math.round(this.nChX / segmPos)
       );
@@ -65,6 +67,7 @@ class MainSectionGraphs {
         "graph_profile_y",
         "#",
         "Profile Y total counts",
+        this.posResolution,
         this.nChY,
         Math.round(this.nChY / segmPos)
       );
@@ -72,6 +75,7 @@ class MainSectionGraphs {
         "graph_last_profile_x",
         "#",
         "Profile X counts in last --- ms",
+        this.posResolution,
         this.nChX,
         Math.round(this.nChX / segmPos)
       );
@@ -79,6 +83,7 @@ class MainSectionGraphs {
         "graph_last_profile_y",
         "#",
         "Profile Y counts in last --- ms",
+        this.posResolution,
         this.nChY,
         Math.round(this.nChY / segmPos)
       );
@@ -247,12 +252,12 @@ class MainSectionGraphs {
       let offset_selector_x = new NumberBox(
         "offset_axes_x",
         "X offset [mm]",
-        ((this.nChX - 1) / 2) * this.posPitch
+        (this.nChX / 2) * this.posPitch
       );
       let offset_selector_y = new NumberBox(
         "offset_axes_y",
         "Y offset [mm]",
-        ((this.nChY - 1) / 2) * this.posPitch
+        (this.nChY / 2) * this.posPitch
       );
       let axes_switch_x = new Switch("switch_axes_x", "X in mm");
       let axes_switch_y = new Switch("switch_axes_y", "Y in mm");
@@ -347,7 +352,7 @@ class MainSectionGraphs {
               ? validateNumInput(offset_selector_x.getId(true))
               : ((th.nChX - 1) / 2) * th.posResolution;
             th.graph_array_profiles_x.map((x) => {
-              x.change_x_axis(ptc, off, th.posPitch);
+              x.change_x_axis(ptc, off);
             });
           }
         }
@@ -399,7 +404,7 @@ class MainSectionGraphs {
               ? validateNumInput(offset_selector_y.getId(true))
               : ((th.nChX - 1) / 2) * th.posResolution;
             th.graph_array_profiles_y.map((x) => {
-              x.change_x_axis(ptc, off, th.posPitch);
+              x.change_x_axis(ptc, off);
             });
           }
         }
@@ -560,7 +565,7 @@ class MainSectionGraphs {
                 ? validateNumInput(range_offset_selector.getId(true))
                 : 0;
               th.graph_array_depth.map((x) => {
-                x.change_x_axis(ptc, off, th.rngPitch, "mm w.e.");
+                x.change_x_axis(ptc, off, "mm w.e.");
               });
             }
           }
@@ -724,7 +729,6 @@ class MainSectionGraphs {
               th.components.graphs.rngGraphs.rngGraphComb.change_x_axis(
                 ptc,
                 off,
-                th.rngPitch,
                 "mm w.e."
               );
             }
@@ -777,8 +781,7 @@ class MainSectionGraphs {
                 : ((th.nChX - 1) / 2) * th.posResolution;
               th.components.graphs.posGraphs.posXgraphComb.change_x_axis(
                 ptc,
-                off,
-                th.posPitch
+                off
               );
             }
           }
@@ -826,8 +829,7 @@ class MainSectionGraphs {
               : ((th.nChY - 1) / 2) * th.posResolution;
             th.components.graphs.posGraphs.posYgraphComb.change_x_axis(
               ptc,
-              off,
-              th.posPitch
+              off
             );
           }
         }
@@ -897,13 +899,16 @@ class MainSectionGraphs {
         sum_strips_switch.set_state(false);
         high_low_switch.disable();
         sum_strips_switch.disable();
+        th.setupProfilesAxis(false);
         th.ws.send("set_HIanode", "false");
       } else {
         high_low_switch.enable();
         sum_strips_switch.enable();
         HIanode_switch.switch_state();
+        th.setupProfilesAxis(true);
         th.ws.send("set_HIanode", "true");
       }
+      th.configurePlots(HIanode_switch, high_low_switch, sum_strips_switch);
     });
     high_low_switch.handlerEvent("click", function () {
       if (high_low_switch.getState()) {
@@ -913,6 +918,7 @@ class MainSectionGraphs {
         high_low_switch.switch_state();
         th.ws.send("set_high-low", "true");
       }
+      th.configurePlots(HIanode_switch, high_low_switch, sum_strips_switch);
     });
     sum_strips_switch.handlerEvent("click", function () {
       if (sum_strips_switch.getState()) {
@@ -924,9 +930,28 @@ class MainSectionGraphs {
         high_low_switch.disable();
         th.ws.send("set_sum_strips", "true");
       }
+      th.configurePlots(HIanode_switch, high_low_switch, sum_strips_switch);
     });
   }
-
+  configurePlots(HIsw, hlsw, sumsw) {
+    this.graph_array_profiles_x.forEach((x) => {
+      x.switchAnodeConfig(HIsw.getState(), hlsw.getState(), sumsw.getState());
+    });
+    this.graph_array_profiles_y.forEach((x) => {
+      x.switchAnodeConfig(HIsw.getState(), hlsw.getState(), sumsw.getState());
+    });
+  }
+  setupProfilesAxis(mode) {
+    if (mode) {
+      this.posPitch = this.detConfig.posPitch * 2;
+      this.components.controls.xAxis.pitchSel.update(this.posPitch);
+      this.components.controls.yAxis.pitchSel.update(this.posPitch);
+    } else {
+      this.posPitch = this.detConfig.posPitch;
+      this.components.controls.xAxis.pitchSel.update(this.posPitch);
+      this.components.controls.yAxis.pitchSel.update(this.posPitch);
+    }
+  }
   updateProfiles(axis, mode, data) {
     let graphs = [];
     switch (axis) {
@@ -1013,6 +1038,13 @@ class MainSectionGraphs {
 
   getGraphs() {
     return this.graph_array;
+  }
+
+  getProfileGraphs() {
+    let profile_graphs = [];
+    this.graph_array_profiles_x.forEach((x) => profile_graphs.push(x));
+    this.graph_array_profiles_y.forEach((x) => profile_graphs.push(x));
+    return profile_graphs;
   }
 
   getControls() {

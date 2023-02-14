@@ -162,10 +162,10 @@ actions.error = (sidebar, data, notifier) => {
       };
       sidebar.updateErrorList(error_toGUI);
     }
-    return;
   } else {
     notifier.notify("GENERIC ERROR", "w");
   }
+  sidebar.stopAllDaq();
 };
 //----------------------------------------------------------------------------------- //
 //---------------------------- GRAPHICS ACTIONS ----------------------------//

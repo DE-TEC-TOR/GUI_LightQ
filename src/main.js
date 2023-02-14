@@ -3,7 +3,7 @@
  *  Contains the main GUI logic, initializes all needed components
  *
  * @author : MattF
- * @company : DE.TEC.TOR.srl
+ * @company : DE.TEC.TOR. srl
  * @version : 1.0.0
  *
  */
