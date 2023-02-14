@@ -457,6 +457,7 @@ class Sidebar {
             th.ntf.notify("DAQ ongoing. Stop data streaming before!", "w");
             return;
           } else {
+            th.ntf.notify("Retrieving file list... Please wait", "i", 1000);
             th.ws.send_to_logger("log_scan_profile_files");
           }
         } else {
@@ -501,6 +502,7 @@ class Sidebar {
             th.ntf.notify("DAQ ongoing. Stop data streaming before!", "w");
             return;
           } else {
+            th.ntf.notify("Retrieving file list... Please wait", "i", 1000);
             th.ws.send_to_logger("log_scan_int_files");
           }
         } else {

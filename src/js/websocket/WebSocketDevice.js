@@ -35,6 +35,15 @@ class WebSocketDevice extends WebsocketController {
           break;
         //----------------------------------------DAQ messages
         case "DAQ_end": //programmatic daq stop
+          this.ntf.notify(
+            "Acquisition completed, processing data files... Please wait",
+            "i",
+            1000
+          );
+          // wsActions.stopAndSave(this.components.sidebar);
+          break;
+        case "saveDAQ":
+          this.ntf.dismissAll();
           wsActions.stopAndSave(this.components.sidebar);
           break;
         //----------------------------------------plot messages
@@ -265,6 +274,7 @@ class WebSocketDevice extends WebsocketController {
           break;
         //----------------------------------------logbook/data-calib storage messages
         case "profile_run_list": //open profile files modal
+          this.ntf.dismissAll();
           wsActions.updateRunList(
             this.components.sidebar,
             msg.value,
@@ -273,6 +283,7 @@ class WebSocketDevice extends WebsocketController {
           );
           break;
         case "integral_run_list":
+          this.ntf.dismissAll();
           wsActions.updateRunList(
             this.components.sidebar,
             msg.value,
