@@ -11,6 +11,7 @@ import Button from "../../../components/controllers/Button";
 import {
   FreeTextBox,
   TextBoxBig,
+  NumberBox,
 } from "../../../components/controllers/TextBoxes";
 import { FileIn } from "../../../components/controllers/FileUploads";
 import Switch from "../../../components/controllers/Switch";
@@ -57,6 +58,23 @@ class Sidebar {
     this.calibBaseURL = "http://" + detConfig.ws_address + detConfig.calib_path;
     this.controlUnitStatus = 99;
     this.HVStatus = 99;
+    this.modalOpen = false;
+    this.sensors = {
+      T1: 0,
+      T2: 0,
+      P1: 0,
+      P2: 0,
+    };
+    this.calibSensors = {
+      kT1: 1,
+      kT2: 1,
+      kP1: 1,
+      kP2: 1,
+      cT1: 0,
+      cT2: 0,
+      cP1: 0,
+      cP2: 0,
+    };
     this.daqStatus = 0; //0 -> idle - 1 -> daqRunning - 2 -> streamingRunning - 3 -> aQuracyDaqRunning - 4 -> backgroundDaqRunning
     this.settings = {
       sampling_rate: "",
@@ -165,7 +183,7 @@ class Sidebar {
           return;
         }
         th.fillErrorModal();
-        th.modal.show();
+        th.toggleModal(th.modal);
       } else {
         th.ntf.conn_error();
       }
@@ -403,8 +421,19 @@ class Sidebar {
 
   createButtons() {
     let th = this;
+    //--------------------------------------CHECK SENSORS BUTTON-------------------------------------//
+    let btn_check_sensors = new Button("btn_check_sensors", "T/P Sensors", 1);
+    btn_check_sensors.addClickAction(function () {
+      if (th.ws.isConnected()) {
+        th.fillSensorsModal();
+        th.toggleModal(th.modal);
+      } else {
+        th.ntf.conn_error();
+      }
+    });
+    this.components.status.btnCheckSensors = btn_check_sensors;
     //--------------------------------------RESET ALARMS BUTTON--------------------------------------//
-    let btn_reset_alarms = new Button("btn_reset_alarms", "Reset Alarms", 1);
+    let btn_reset_alarms = new Button("btn_reset_alarms", "Clear Alarms", 1);
     btn_reset_alarms.addClickAction(function () {
       if (th.ws.isConnected()) {
         th.ws.send("reset_alarms");
@@ -452,6 +481,9 @@ class Sidebar {
         1
       );
       btn_select_pos_measure.addClickAction(function () {
+        // console.log("Opening data modal");
+        // th.fillLogbookDataModal("posData");
+        // th.toggleModal(th.modal);
         if (th.ws.isConnected()) {
           if (th.daqStatus == 1 || th.daqStatus == 2) {
             th.ntf.notify("DAQ ongoing. Stop data streaming before!", "w");
@@ -600,7 +632,7 @@ class Sidebar {
         if (th.ws.isConnected()) {
           th.ws.send_to_logger("log_scan_profile_calib_files", "hidden");
           th.fillSaveCalibrationModal("pos");
-          th.modal.show();
+          th.toggleModal(th.modal);
         } else {
           console.log("Device not connected!");
           th.ntf.conn_error();
@@ -656,7 +688,7 @@ class Sidebar {
         if (th.ws.isConnected()) {
           th.ws.send_to_logger("log_scan_range_calib_files", "hidden");
           th.fillSaveCalibrationModal("rng");
-          th.modal.show();
+          th.toggleModal(th.modal);
         } else {
           console.log("Device not connected!");
           th.ntf.conn_error();
@@ -736,6 +768,7 @@ class Sidebar {
   }
 
   fillErrorModal() {
+    let th = this;
     this.modal.setTitle("Internal Errors / Warnings");
     this.modal.setBody(
       $("<table>", { class: "table" })
@@ -748,7 +781,7 @@ class Sidebar {
         )
         .append($("<tbody>", { id: "errorList" }))
         .append(
-          "<p>Click the RESET ALARMS button to reset errors and warnings. If the problem is not solved, contact the manufacturer.</p>"
+          "<p>Click the CLEAR ALARMS button to reset errors and warnings. If the problem is not solved, contact the manufacturer.</p>"
         )
     );
     this.errorList.forEach(function (error, index) {
@@ -758,7 +791,9 @@ class Sidebar {
           .append($("<td>", { html: error.message }))
       );
     });
-    this.modal.addButton("btn_close", "secondary", "Close", true);
+    this.modal.addButton("btn_close", "secondary", "Close", true, function () {
+      th.toggleModal(th.modal);
+    });
   }
 
   fillDAQModal() {
@@ -774,7 +809,7 @@ class Sidebar {
     //Delete button
     this.modal.addButton("btn_delete", "danger", "Discard", false, function () {
       th.ws.send_to_logger("discard_all_files");
-      th.modal.hide();
+      th.toggleModal(th.modal);
     });
     //Save button
     this.modal.addButton("btn_save", "success", "Save", false, function () {
@@ -795,7 +830,273 @@ class Sidebar {
         errors: error_string,
       };
       th.ws.send_to_logger("log_save_notes", JSON.stringify(notes_cluster));
-      th.modal.hide();
+      th.toggleModal(th.modal);
+    });
+  }
+
+  fillSensorsModal() {
+    let th = this;
+    let T1field = new NumberBox(
+      "T1_field",
+      "T1",
+      th.calibTPsensor(th.sensors.T1, th.calibSensors.kT1, th.calibSensors.cT1)
+    );
+    let T2field = new NumberBox(
+      "T2_field",
+      "T2",
+      th.calibTPsensor(th.sensors.T2, th.calibSensors.kT2, th.calibSensors.cT2)
+    );
+    let P1field = new NumberBox(
+      "P1_field",
+      "P1",
+      th.calibTPsensor(th.sensors.P1, th.calibSensors.kP1, th.calibSensors.cP1)
+    );
+    let P2field = new NumberBox(
+      "P2_field",
+      "P2",
+      th.calibTPsensor(th.sensors.P2, th.calibSensors.kP2, th.calibSensors.cP2)
+    );
+    let kT1field = new NumberBox("kT1_field", "k(T1)", th.calibSensors.kT1);
+    let kT2field = new NumberBox("kT2_field", "k(T2)", th.calibSensors.kT2);
+    let kP1field = new NumberBox("kP1_field", "k(P1)", th.calibSensors.kP1);
+    let kP2field = new NumberBox("kP2_field", "k(P2)", th.calibSensors.kP2);
+    let cT1field = new NumberBox(
+      "cT1_field",
+      "offset(T1)",
+      th.calibSensors.cT1
+    );
+    let cT2field = new NumberBox(
+      "cT2_field",
+      "offset(T2)",
+      th.calibSensors.cT2
+    );
+    let cP1field = new NumberBox(
+      "cP1_field",
+      "offset(P1)",
+      th.calibSensors.cT1
+    );
+    let cP2field = new NumberBox(
+      "cP2_field",
+      "offset(P2)",
+      th.calibSensors.cP2
+    );
+    kT1field.handlerEvent("change", function () {
+      let val = !isNaN(validateNumInput(kT1field.getId(true)))
+        ? validateNumInput(kT1field.getId(true))
+        : 1;
+      kT1field.update(val);
+      th.calibSensors.kT1 = kT1field.getValue();
+      T1field.update(
+        th.calibTPsensor(
+          th.sensors.T1,
+          th.calibSensors.kT1,
+          th.calibSensors.cT1
+        )
+      );
+    });
+    cT1field.handlerEvent("change", function () {
+      let val = !isNaN(validateNumInput(cT1field.getId(true)))
+        ? validateNumInput(cT1field.getId(true))
+        : 0;
+      cT1field.update(val);
+      th.calibSensors.cT1 = cT1field.getValue();
+      T1field.update(
+        th.calibTPsensor(
+          th.sensors.T1,
+          th.calibSensors.kT1,
+          th.calibSensors.cT1
+        )
+      );
+    });
+    kT2field.handlerEvent("change", function () {
+      let val = !isNaN(validateNumInput(kT2field.getId(true)))
+        ? validateNumInput(kT2field.getId(true))
+        : 1;
+      kT2field.update(val);
+      th.calibSensors.kT2 = kT2field.getValue();
+      T2field.update(
+        th.calibTPsensor(
+          th.sensors.T2,
+          th.calibSensors.kT2,
+          th.calibSensors.cT2
+        )
+      );
+    });
+    cT2field.handlerEvent("change", function () {
+      let val = !isNaN(validateNumInput(cT2field.getId(true)))
+        ? validateNumInput(cT2field.getId(true))
+        : 0;
+      cT2field.update(val);
+      th.calibSensors.cT2 = cT2field.getValue();
+      T2field.update(
+        th.calibTPsensor(
+          th.sensors.T2,
+          th.calibSensors.kT2,
+          th.calibSensors.cT2
+        )
+      );
+    });
+    kP1field.handlerEvent("change", function () {
+      let val = !isNaN(validateNumInput(kP1field.getId(true)))
+        ? validateNumInput(kP1field.getId(true))
+        : 1;
+      kP1field.update(val);
+      th.calibSensors.kP1 = kP1field.getValue();
+      P1field.update(
+        th.calibTPsensor(
+          th.sensors.P1,
+          th.calibSensors.kP1,
+          th.calibSensors.cP1
+        )
+      );
+    });
+    cP1field.handlerEvent("change", function () {
+      let val = !isNaN(validateNumInput(cP1field.getId(true)))
+        ? validateNumInput(cP1field.getId(true))
+        : 0;
+      cP1field.update(val);
+      th.calibSensors.cP1 = cP1field.getValue();
+      P1field.update(
+        th.calibTPsensor(
+          th.sensors.P1,
+          th.calibSensors.kP1,
+          th.calibSensors.cP1
+        )
+      );
+    });
+    kP2field.handlerEvent("change", function () {
+      let val = !isNaN(validateNumInput(kP2field.getId(true)))
+        ? validateNumInput(kP2field.getId(true))
+        : 1;
+      kP2field.update(val);
+      th.calibSensors.kP2 = kP2field.getValue();
+      P2field.update(
+        th.calibTPsensor(
+          th.sensors.P2,
+          th.calibSensors.kP2,
+          th.calibSensors.cP2
+        )
+      );
+    });
+    cP2field.handlerEvent("change", function () {
+      let val = !isNaN(validateNumInput(cP2field.getId(true)))
+        ? validateNumInput(cP2field.getId(true))
+        : 0;
+      cP2field.update(val);
+      th.calibSensors.cP2 = cP2field.getValue();
+      P2field.update(
+        th.calibTPsensor(
+          th.sensors.P2,
+          th.calibSensors.kP2,
+          th.calibSensors.cP2
+        )
+      );
+    });
+    //--------------------------------SAVE/DISCARD MODAL--------------------------------//
+    this.modal.setTitle("T/P sensors");
+    this.modal.setBody(
+      $("<div>", { class: "row", style: "padding-top: 20px;" })
+        .append(
+          $("<div>", {
+            id: "spaceCalib",
+            class: "align-middle col-xl-12 col-lg-12 col-md-12 col-sm-12",
+          }).append("<b> Check the calibration formulas on the user manual</b>")
+        )
+        .append(
+          $("<div>", { class: "row", style: "padding-top: 20px;" })
+            .append(
+              $("<div>", {
+                id: "spaceT1",
+                class: "align-middle col-xl-6 col-lg-6 col-md-6 col-sm-12",
+              })
+            )
+            .append(
+              $("<div>", {
+                id: "spacekT1",
+                class: "align-middle col-xl-3 col-lg-3 col-md-3 col-sm-6",
+              })
+            )
+            .append(
+              $("<div>", {
+                id: "spacecT1",
+                class: "align-middle col-xl-3 col-lg-3 col-md-3 col-sm-6",
+              })
+            )
+            .append(
+              $("<div>", {
+                id: "spaceT2",
+                class: "align-middle col-xl-6 col-lg-6 col-md-6 col-sm-12",
+              })
+            )
+            .append(
+              $("<div>", {
+                id: "spacekT2",
+                class: "align-middle col-xl-3 col-lg-3 col-md-3 col-sm-6",
+              })
+            )
+            .append(
+              $("<div>", {
+                id: "spacecT2",
+                class: "align-middle col-xl-3 col-lg-3 col-md-3 col-sm-6",
+              })
+            )
+            .append(
+              $("<div>", {
+                id: "spaceP1",
+                class: "align-middle col-xl-6 col-lg-6 col-md-6 col-sm-12",
+              })
+            )
+            .append(
+              $("<div>", {
+                id: "spacekP1",
+                class: "align-middle col-xl-3 col-lg-3 col-md-3 col-sm-6",
+              })
+            )
+            .append(
+              $("<div>", {
+                id: "spacecP1",
+                class: "align-middle col-xl-3 col-lg-3 col-md-3 col-sm-6",
+              })
+            )
+            .append(
+              $("<div>", {
+                id: "spaceP2",
+                class: "align-middle col-xl-6 col-lg-6 col-md-6 col-sm-12",
+              })
+            )
+            .append(
+              $("<div>", {
+                id: "spacekP2",
+                class: "align-middle col-xl-3 col-lg-3 col-md-3 col-sm-6",
+              })
+            )
+            .append(
+              $("<div>", {
+                id: "spacecP2",
+                class: "align-middle col-xl-3 col-lg-3 col-md-3 col-sm-6",
+              })
+            )
+        )
+    );
+    T1field.draw("#spaceT1");
+    T2field.draw("#spaceT2");
+    P1field.draw("#spaceP1");
+    P2field.draw("#spaceP2");
+    kT1field.draw("#spacekT1");
+    kT2field.draw("#spacekT2");
+    kP1field.draw("#spacekP1");
+    kP2field.draw("#spacekP2");
+    cT1field.draw("#spacecT1");
+    cT2field.draw("#spacecT2");
+    cP1field.draw("#spacecP1");
+    cP2field.draw("#spacecP2");
+    T1field.disable();
+    T2field.disable();
+    P1field.disable();
+    P2field.disable();
+    // DISMISS MODAL
+    this.modal.addButton("btn_close", "secondary", "Close", true, function () {
+      th.toggleModal(th.modal);
     });
   }
 
@@ -902,6 +1203,11 @@ class Sidebar {
           .append($("<tbody>", { id: "measuresList" }))
       );
       this.modal.setBody(
+        $("<table>", { class: "table modal-table" }).append(
+          $("<thead>", { id: "download-head" })
+        )
+      );
+      this.modal.setBody(
         $("<div>", { class: "row", style: "padding-top: 20px;" })
           .append(
             $("<div>", {
@@ -1003,17 +1309,16 @@ class Sidebar {
             $("#download_links_row").remove();
           if (mode == "intData") {
             //DEVICES WITH ONLY INTEGRAL MODULE
-            $("#measuresList")
+            $("#download-head")
               .append(
                 $("<tr>", { id: "download_titles" })
-                  .append($("<th>", { scope: "col", html: " " }))
                   .append($("<th>", { scope: "col", html: "DOWNLOAD INT" }))
-                  .append($("<th>", { scope: "col", html: " " }))
+                  .append($("<th>", { scope: "col", html: "DOWNLOAD LOG" }))
+                  .append($("<th>", { scope: "col", html: "" }))
                   .append($("<th>", { scope: "col", html: "DOWNLOAD NOTES" }))
               )
               .append(
                 $("<tr>", { class: "download_links", id: "download_links_row" })
-                  .append($("<td>", { scope: "row", class: "align-middle" }))
                   .append(
                     $("<td>", { class: "align-middle" }).append(
                       $("<div>", { class: "btn-success" }).append(
@@ -1028,7 +1333,20 @@ class Sidebar {
                       )
                     )
                   )
-                  .append($("<td>", { scope: "row", class: "align-middle" }))
+                  .append(
+                    $("<td>", { class: "align-middle" }).append(
+                      $("<div>", { class: "btn-success" }).append(
+                        $("<a>", {
+                          id: "link_n",
+                          href: configs.dataFolder + get_html + "_log.csv",
+                          target: "_blank",
+                          download: get_html + "_log.csv",
+                          html: "Log",
+                        })
+                      )
+                    )
+                  )
+                  .append($("<td>", { scope: "col", class: "align-middle" }))
                   .append(
                     $("<td>", { class: "align-middle" }).append(
                       $("<div>", { class: "btn-success" }).append(
@@ -1044,13 +1362,12 @@ class Sidebar {
                   )
               );
           } else if (mode == "posData") {
-            //DEVICES WITH ONLY INTEGRAL MODULE
-            $("#measuresList")
+            $("#download-head")
               .append(
                 $("<tr>", { id: "download_titles" })
-                  .append($("<th>", { scope: "col", html: " " }))
                   .append($("<th>", { scope: "col", html: "DOWNLOAD X" }))
                   .append($("<th>", { scope: "col", html: "DOWNLOAD Y" }))
+                  .append($("<th>", { scope: "col", html: "DOWNLOAD LOG" }))
                   .append($("<th>", { scope: "col", html: "DOWNLOAD NOTES" }))
               )
               .append(
@@ -1058,7 +1375,6 @@ class Sidebar {
                   class: "download_links",
                   id: "download_links_row",
                 })
-                  .append($("<td>", { scope: "row", class: "align-middle" }))
                   .append(
                     $("<td>", { class: "align-middle" }).append(
                       $("<div>", { class: "btn-success" }).append(
@@ -1073,7 +1389,7 @@ class Sidebar {
                     )
                   )
                   .append(
-                    $("<td>", { class: "align-middle" }).append(
+                    $("<td>", { scope: "col", class: "align-middle" }).append(
                       $("<div>", { class: "btn-success" }).append(
                         $("<a>", {
                           id: "link_d",
@@ -1086,10 +1402,23 @@ class Sidebar {
                     )
                   )
                   .append(
-                    $("<td>", { class: "align-middle" }).append(
+                    $("<td>", { scope: "col", class: "align-middle" }).append(
                       $("<div>", { class: "btn-success" }).append(
                         $("<a>", {
                           id: "link_n",
+                          href: configs.dataFolder + get_html + "_log.csv",
+                          target: "_blank",
+                          download: get_html + "_log.csv",
+                          html: "Log",
+                        })
+                      )
+                    )
+                  )
+                  .append(
+                    $("<td>", { class: "align-middle" }).append(
+                      $("<div>", { class: "btn-success" }).append(
+                        $("<a>", {
+                          id: "link_l",
                           href: configs.dataFolder + get_html + "_notes.txt",
                           target: "_blank",
                           download: get_html + "_notes.txt",
@@ -1102,9 +1431,13 @@ class Sidebar {
           }
         });
       } else {
-        $("#measuresList").append(
-          '<p style="padding: 10px;">No available files</p>'
-        );
+        $("#measuresList")
+          .append($("<td>", { scope: "col", class: "align-middle" }))
+          .append(
+            $("<td>", { class: "align-middle" }).append(
+              '<p style="padding: 10px;">No available files</p>'
+            )
+          );
       }
       //DOWNLOAD ALL SELECTED
       this.modal.addButton(
@@ -1216,7 +1549,7 @@ class Sidebar {
                   JSON.stringify(cluster)
                 );
               }
-              th.modal.hide();
+              th.toggleModal(th.modal);
             },
             function () {
               th.ntf.notify("Cancelled", "e");
@@ -1245,7 +1578,7 @@ class Sidebar {
         if (mode == "posData") {
           th.resetAllProfilePlots();
         }
-        th.modal.hide();
+        th.toggleModal(th.modal);
       });
       // EDIT NOTES FILE
       this.modal.addButton(
@@ -1275,7 +1608,15 @@ class Sidebar {
         }
       );
       // DISMISS MODAL
-      this.modal.addButton("btn_close", "secondary", "Close", true);
+      this.modal.addButton(
+        "btn_close",
+        "secondary",
+        "Close",
+        true,
+        function () {
+          th.toggleModal(th.modal);
+        }
+      );
       resizeText({
         element: null,
         elements: document.querySelectorAll(".tdnotes"),
@@ -1378,7 +1719,7 @@ class Sidebar {
           if (mode == "rngCalib") {
             th.ws.send_to_logger("log_delete_range_calib_file", get_html);
           }
-          th.modal.hide();
+          th.toggleModal(th.modal);
         },
         function () {
           th.ntf.notify("Cancelled", "e");
@@ -1396,10 +1737,12 @@ class Sidebar {
       if (mode == "rngCalib") {
         th.ws.send_to_logger("log_load_range_calib_file", get_html);
       }
-      th.modal.hide();
+      th.toggleModal(th.modal);
     });
     // DISMISS MODAL
-    this.modal.addButton("btn_close", "secondary", "Close", true);
+    this.modal.addButton("btn_close", "secondary", "Close", true, function () {
+      th.toggleModal(th.modal);
+    });
   }
 
   fillSaveCalibrationModal(mode) {
@@ -1480,7 +1823,7 @@ class Sidebar {
                 JSON.stringify(th.calib_param)
               );
             }
-            th.modal.hide();
+            th.toggleModal(th.modal);
           },
           function () {
             th.ntf.notify("Change file name", "e");
@@ -1542,10 +1885,12 @@ class Sidebar {
             JSON.stringify(th.calib_param)
           );
         }
-        th.modal.hide();
+        th.toggleModal(th.modal);
       }
     });
-    this.modal.addButton("btn_close", "secondary", "Close", true);
+    this.modal.addButton("btn_close", "secondary", "Close", true, function () {
+      th.toggleModal(th.modal);
+    });
   }
 
   fillSaveBackgroundModal(data) {
@@ -1563,7 +1908,7 @@ class Sidebar {
         filename: data,
       };
       th.ws.send_to_logger("log_delete_background", JSON.stringify(cluster));
-      th.modal.hide();
+      th.toggleModal(th.modal);
     });
     //Save button
     this.modal.addButton("btn_save", "success", "Save", false, function () {
@@ -1588,7 +1933,7 @@ class Sidebar {
               "log_rename_background",
               JSON.stringify(bkg_cluster)
             );
-            th.modal.hide();
+            th.toggleModal(th.modal);
           },
           function () {
             th.ntf.notify("Change file name", "i");
@@ -1600,7 +1945,7 @@ class Sidebar {
           "log_rename_background",
           JSON.stringify(bkg_cluster)
         );
-        th.modal.hide();
+        th.toggleModal(th.modal);
       }
     });
   }
@@ -1651,7 +1996,7 @@ class Sidebar {
         "Are you sure to delete this background file?",
         function () {
           th.ws.send_to_logger("log_delete_background", get_html);
-          th.modal.hide();
+          th.toggleModal(th.modal);
         },
         function () {
           th.ntf.notify("Cancelled", "e");
@@ -1685,7 +2030,7 @@ class Sidebar {
               "log_download_background",
               JSON.stringify(cluster)
             );
-            th.modal.hide();
+            th.toggleModal(th.modal);
           },
           function () {
             th.ntf.notify("Cancelled", "e");
@@ -1695,7 +2040,9 @@ class Sidebar {
       }
     );
     // DISMISS MODAL
-    this.modal.addButton("btn_close", "secondary", "Close", true);
+    this.modal.addButton("btn_close", "secondary", "Close", true, function () {
+      th.toggleModal(th.modal);
+    });
   }
 
   resetAllPlots() {
@@ -1703,11 +2050,13 @@ class Sidebar {
       x.reset();
     });
   }
+
   resetAllProfilePlots() {
     this.profile_graph_array.forEach((x) => {
       x.reset();
     });
   }
+
   stopAllDaq() {
     this.toggleGUIinteractions("on");
     this.tuneSettings("stop");
@@ -1856,7 +2205,7 @@ class Sidebar {
 
   saveData() {
     this.fillDAQModal();
-    this.modal.show();
+    this.toggleModal(this.modal);
   }
 
   startDAQ() {
@@ -1978,7 +2327,7 @@ class Sidebar {
       .removeClass("btn-outline-danger")
       .addClass("btn-outline-success");
     this.fillSaveBackgroundModal(data);
-    this.modal.show();
+    this.toggleModal(this.modal);
   }
 
   getPanels(page) {
@@ -2016,8 +2365,35 @@ class Sidebar {
     return this.modal;
   }
 
+  toggleModal(modal) {
+    if (this.modalOpen) {
+      modal.hide();
+      this.modalOpen = false;
+    } else {
+      modal.show();
+      this.modalOpen = true;
+    }
+  }
+
   getDaqStatus() {
     return this.daqStatus;
+  }
+
+  getControlUnitStatus() {
+    return this.controlUnitStatus;
+  }
+
+  getHVStatus() {
+    return this.hvStatus;
+  }
+
+  getSensors() {
+    return this.sensors;
+  }
+
+  setControlUnitStatus(val) {
+    this.controlUnitStatus = parseInt(val);
+    this.components.status.cuStatus_ind.update(this.controlUnitStatus);
   }
 
   setDaqStatus(val) {
@@ -2028,17 +2404,14 @@ class Sidebar {
     this.components.status.memory_ind.updateData(data);
   }
 
-  getControlUnitStatus() {
-    return this.controlUnitStatus;
+  setSensors(data) {
+    if (!this.modalOpen) {
+      this.sensors = { ...data };
+    }
   }
 
-  setControlUnitStatus(val) {
-    this.controlUnitStatus = parseInt(val);
-    this.components.status.cuStatus_ind.update(this.controlUnitStatus);
-  }
-
-  getHVStatus() {
-    return this.hvStatus;
+  calibTPsensor(val, k, c) {
+    return val * k + c;
   }
 
   setHVStatus(val) {

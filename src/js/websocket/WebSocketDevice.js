@@ -160,7 +160,7 @@ class WebSocketDevice extends WebsocketController {
           break;
         case "alarms_reset_done":
           wsActions.updateDeviceStatus(this.components.sidebar, 0);
-          this.ntf.notify("Alarms reset completed", "s");
+          this.ntf.notify("Alarms cleared", "s");
           break;
         case "memory_update": //update control unit memory status
           wsActions.updateMemoryStatus(this.components.sidebar, msg.value);
@@ -241,6 +241,12 @@ class WebSocketDevice extends WebsocketController {
             msg.value,
             "init",
             this.ntf
+          );
+          break;
+        case "update_sensors":
+          wsActions.updateSensors(
+            this.components.sidebar,
+            JSON.parse(msg.value)
           );
           break;
         //----------------------------------------operation messages

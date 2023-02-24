@@ -78,7 +78,7 @@ actions.updateRunList = (sidebar, data, mode, notifier) => {
   let fileList = sidebar.updateDataFileList(data, mode);
   if (fileList.length >= 0) {
     sidebar.fillLogbookDataModal(mode);
-    sidebar.getModal().show();
+    sidebar.toggleModal(sidebar.getModal());
   } else {
     notifier.notify("No data files in memory", "w");
     Util.log("Measures list not defined", 1);
@@ -97,7 +97,7 @@ actions.updateCalibList = (
   if (status == "modal") {
     if (list.length > 0) {
       sidebar.fillLogbookCalibrationModal(mode);
-      sidebar.getModal().show();
+      sidebar.toggleModal(sidebar.getModal());
     } else {
       notifier.notify("No calibration files available", "w");
     }
@@ -111,11 +111,15 @@ actions.updateBackgroundList = (sidebar, data, status = "hidden", notifier) => {
   if (status == "modal") {
     if (list.length > 0) {
       sidebar.fillLogbookBackgroundModal();
-      sidebar.getModal().show();
+      sidebar.toggleModal(sidebar.getModal());
     } else {
       notifier.notify("No background files available", "w");
     }
   }
+};
+
+actions.updateSensors = (sidebar, data) => {
+  sidebar.setSensors(data);
 };
 
 actions.loadCalibFile = (sidebar, data, mode) => {

@@ -14,7 +14,7 @@ let files_path = "http://" + IP_addr + "/files/media/mmcblk0p1/";
 
 const device_configs = {
   devName: "LightQ",
-  devID: "",
+  devID: "11",
   ws_address: IP_addr,
   ws_port: "6123",
   hasPos: true,

@@ -14,6 +14,10 @@ import {
 import * as actions from "../events/monitorPageEvents";
 
 class MonitorPage extends Page {
+  constructor() {
+    super("");
+    this.created = false;
+  }
   //Building page components
   build(detConfig, sidebar, mainSection, mainSectionCalib = null) {
     super.init();
@@ -115,6 +119,10 @@ class MonitorPage extends Page {
             this.getComp(ctr.getId()).draw("#area_" + ctr.getId())
           );
         });
+        if (!this.created) {
+          $("#switch_HI_anode").trigger("click");
+          this.created = true;
+        }
         break;
       case "posCalib":
         // DRAW POS CALIBRATION PAGE COMPONENTS

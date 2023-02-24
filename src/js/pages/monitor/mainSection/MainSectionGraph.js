@@ -1,10 +1,11 @@
 /**
  * Device main section for DAQ pages -> for device integrated software
  *
- * @author : Mattia Fontana
- * @company : TORETDevices srl
+ * @author : MattF
+ * @company : DE.TEC.TOR. srl
  * @version : 1.0.0
  */
+import Util from "../../../core/Util";
 import Button from "../../../components/controllers/Button";
 import Switch from "../../../components/controllers/Switch";
 import { NumberBox } from "../../../components/controllers/TextBoxes";
@@ -886,8 +887,18 @@ class MainSectionGraphs {
       });
     }
     //only LightQ
-    let HIanode_switch = new Switch("switch_HI_anode", "HI config?");
-    let high_low_switch = new Switch("switch_high_low", "high (ON)/low (OFF)");
+    let HIanode_switch = new Switch(
+      "switch_HI_anode",
+      "L1 (STD)/L2 (DBL)",
+      false,
+      "el-doubleSwitch-style"
+    );
+    let high_low_switch = new Switch(
+      "switch_high_low",
+      "low/high",
+      false,
+      "el-doubleSwitch-style"
+    );
     let sum_strips_switch = new Switch("switch_sum_strips", "sum strips?");
     this.components.controls.shared.HIanode_switch = HIanode_switch;
     this.components.controls.shared.high_low_switch = high_low_switch;
@@ -897,13 +908,13 @@ class MainSectionGraphs {
         HIanode_switch.switch_state();
         high_low_switch.set_state(false);
         sum_strips_switch.set_state(false);
-        high_low_switch.disable();
-        sum_strips_switch.disable();
+        high_low_switch.hide();
+        sum_strips_switch.hide();
         th.setupProfilesAxis(false);
         th.ws.send("set_HIanode", "false");
       } else {
-        high_low_switch.enable();
-        sum_strips_switch.enable();
+        high_low_switch.show();
+        sum_strips_switch.show();
         HIanode_switch.switch_state();
         th.setupProfilesAxis(true);
         th.ws.send("set_HIanode", "true");
