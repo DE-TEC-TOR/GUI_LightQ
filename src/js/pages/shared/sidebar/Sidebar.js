@@ -454,7 +454,7 @@ class Sidebar {
     );
     btn_reset_counters.addClickAction(function () {
       if (th.ws.isConnected()) {
-        if (th.daqStatus == 1) {
+        if (th.daqStatus == 1 || th.daqStatus == 4) {
           th.ntf.notify(
             "DAQ ongoing. Stop data streaming before performing a counter reset!",
             "w"
@@ -485,7 +485,7 @@ class Sidebar {
         // th.fillLogbookDataModal("posData");
         // th.toggleModal(th.modal);
         if (th.ws.isConnected()) {
-          if (th.daqStatus == 1 || th.daqStatus == 2) {
+          if (th.daqStatus != 0) {
             th.ntf.notify("DAQ ongoing. Stop data streaming before!", "w");
             return;
           } else {
@@ -508,7 +508,7 @@ class Sidebar {
       );
       btn_select_rng_measure.addClickAction(function () {
         if (th.ws.isConnected()) {
-          if (th.daqStatus == 1 || th.daqStatus == 2) {
+          if (th.daqStatus != 0) {
             th.ntf.notify("DAQ ongoing. Stop data streaming before!", "w");
             return;
           } else {
@@ -530,7 +530,7 @@ class Sidebar {
       );
       btn_select_int_measure.addClickAction(function () {
         if (th.ws.isConnected()) {
-          if (th.daqStatus == 1 || th.daqStatus == 2) {
+          if (th.daqStatus != 0) {
             th.ntf.notify("DAQ ongoing. Stop data streaming before!", "w");
             return;
           } else {
@@ -2089,6 +2089,14 @@ class Sidebar {
         );
         return;
       }
+      if (this.daqStatus == 4) {
+        //dbackground acquisition running
+        this.ntf.notify(
+          "Background acquisition ongoing. Wait the end before starting an acquisition!",
+          "w"
+        );
+        return;
+      }
       // Check if measure is running
       if (this.daqStatus == 1) {
         // MEASURE RUNNING -> stop command
@@ -2160,13 +2168,15 @@ class Sidebar {
   }
 
   tuneSettings(mode) {
-    if (mode === "start") {
+    if (mode === "stop") {
       if ($(this.components.settings.samplMode.getId(true)).val() != "0") {
         this.components.settings.samplRate.disable();
       } else {
         this.components.settings.samplRate.enable();
       }
-    } else if (mode === "stop") {
+    } else if (mode === "start") {
+      this.components.settings.samplRate.disable();
+      this.components.settings.samplMode.disable();
     } else {
       console.log("Unknown mode!");
     }
@@ -2212,6 +2222,7 @@ class Sidebar {
     this.ntf.notify("DAQ starting...", "i");
     this.settings.datetime = formatDate(new Date()); //updating the run timestamp
     this.ws.send("measure_start", JSON.stringify(this.settings));
+    this.tuneSettings("start");
     this.setDaqStatus(1);
     this.toggleGUIinteractions("off");
     $("#btn_acq").removeClass("btn-success").addClass("btn-danger");
@@ -2235,6 +2246,7 @@ class Sidebar {
     this.ntf.notify("Data stream starting...", "s");
     this.ws.send("start_data_stream", JSON.stringify(this.settings));
     this.setDaqStatus(2);
+    this.tuneSettings("start");
     this.toggleGUIinteractions("off");
     this.components.acquisition.loader.activate();
     this.components.acquisition.btnDataStream.setName("Stop data stream");
@@ -2295,9 +2307,11 @@ class Sidebar {
   }
 
   startRecordBackground() {
-    this.ntf.notify("Background DAQ starting...", "s");
+    this.ntf.notify("Background DAQ starting...", "i");
     this.ws.send("bkg_measure_start", JSON.stringify(this.bkg_settings));
     this.setDaqStatus(4);
+    this.tuneSettings("start");
+    this.toggleGUIinteractions("off");
     this.configs_array.map((x) => x.disable());
     this.graph_array.map((x) => {
       x.disable_tooltips();
@@ -2318,6 +2332,8 @@ class Sidebar {
       this.components.settings.samplRate.enable();
     }
     this.setDaqStatus(0);
+    this.tuneSettings("stop");
+    this.toggleGUIinteractions("on");
     this.graph_array.map((x) => {
       x.enable_tooltips();
     });
