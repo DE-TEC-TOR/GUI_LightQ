@@ -2751,9 +2751,19 @@ class Sidebar {
         .removeClass("btn-outline-danger")
         .addClass("btn-outline-success");
     }
+    if (this.daqStatus == 4) {
+      this.ntf.notify(
+        "Backgraound acquisition aborted by unexpected disconnection!",
+        "e"
+      );
+      Util.trig("btn_bkg_acq", "setName", "Record background");
+      $("#btn_bkg_acq")
+        .removeClass("btn-outline-danger")
+        .addClass("btn-outline-success");
+    }
     this.graph_array.map((x) => x.enable_tooltips());
     this.setDaqStatus(0);
-    this.setControlUnitStatus(99);
+    this.setControlUnitStatus(1);
     if (this.hasHV) this.setHVStatus(99);
     if (this.devName == "aQuracy") this.setCameraStatus(99);
   }
