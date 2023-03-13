@@ -484,6 +484,8 @@ export class Graph extends Component {
   change_x_axis(ptc, off, label = "mm") {
     let new_labels = [];
     let new_data = [];
+    this.setPtc = this.anodeConfig.HIconfig ? ptc / 2 : ptc;
+    this.setOff = off;
     this.completeData.forEach((x, i) => {
       new_labels.push((i * ptc - off).toFixed(1));
       new_data.push({
@@ -878,6 +880,14 @@ export class GraphInt extends Component {
               duration: 500,
               easing: "easeOutCubic",
             },
+          },
+        },
+        animations: {
+          x: {
+            animation: false,
+          },
+          y: {
+            animation: false,
           },
         },
       },

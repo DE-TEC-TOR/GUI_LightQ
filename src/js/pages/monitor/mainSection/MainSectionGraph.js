@@ -31,6 +31,8 @@ class MainSectionGraphs {
     this.rngPitch = detConfig.rngPitch;
     this.posResolution = detConfig.posResolution;
     this.rngResolution = detConfig.rngResolution;
+    this.offsetX = 64;
+    this.offsetY = 64;
     this.daqStatus = 0; //0 -> idle - 1 -> daqRunning - 2 -> streamingRunning - 3 -> aQuracyDaqRunning
     this.components = {
       graphs: { posGraphs: {}, rngGraphs: {}, intGraphs: {} },
@@ -238,6 +240,69 @@ class MainSectionGraphs {
 
   createControls() {
     let th = this;
+    //only LightQ
+    let HIanode_switch = new Switch(
+      "switch_HI_anode",
+      "L1 (STD)/L2 (DBL)",
+      false,
+      "el-doubleSwitch-style"
+    );
+    let high_low_switch = new Switch(
+      "switch_high_low",
+      "low/high",
+      false,
+      "el-doubleSwitch-style"
+    );
+    let sum_strips_switch = new Switch("switch_sum_strips", "sum strips?");
+    this.components.controls.shared.HIanode_switch = HIanode_switch;
+    this.components.controls.shared.high_low_switch = high_low_switch;
+    this.components.controls.shared.sum_strips_switch = sum_strips_switch;
+    HIanode_switch.handlerEvent("click", function () {
+      if (HIanode_switch.getState()) {
+        HIanode_switch.switch_state();
+        high_low_switch.set_state(false);
+        sum_strips_switch.set_state(false);
+        high_low_switch.hide();
+        sum_strips_switch.hide();
+        th.setupProfilesAxis(false);
+        th.ws.send("set_HIanode", "false");
+      } else {
+        high_low_switch.show();
+        sum_strips_switch.show();
+        HIanode_switch.switch_state();
+        th.setupProfilesAxis(true);
+        th.ws.send("set_HIanode", "true");
+      }
+      th.configurePlots(HIanode_switch, high_low_switch, sum_strips_switch);
+      if (th.components.controls.xAxis.axesSwitch.getState()) {
+        $(th.components.controls.xAxis.axesSwitch.getId(true)).trigger("click");
+      }
+      if (th.components.controls.yAxis.axesSwitch.getState()) {
+        $(th.components.controls.yAxis.axesSwitch.getId(true)).trigger("click");
+      }
+    });
+    high_low_switch.handlerEvent("click", function () {
+      if (high_low_switch.getState()) {
+        high_low_switch.switch_state();
+        th.ws.send("set_high-low", "false");
+      } else {
+        high_low_switch.switch_state();
+        th.ws.send("set_high-low", "true");
+      }
+      th.configurePlots(HIanode_switch, high_low_switch, sum_strips_switch);
+    });
+    sum_strips_switch.handlerEvent("click", function () {
+      if (sum_strips_switch.getState()) {
+        sum_strips_switch.switch_state();
+        high_low_switch.enable();
+        th.ws.send("set_sum_strips", "false");
+      } else {
+        sum_strips_switch.switch_state();
+        high_low_switch.disable();
+        th.ws.send("set_sum_strips", "true");
+      }
+      th.configurePlots(HIanode_switch, high_low_switch, sum_strips_switch);
+    });
     //Position plots
     if (this.hasPos) {
       let pitch_selector_x = new NumberBox(
@@ -253,12 +318,12 @@ class MainSectionGraphs {
       let offset_selector_x = new NumberBox(
         "offset_axes_x",
         "X offset [mm]",
-        (this.nChX / 2) * this.posPitch
+        this.offsetX
       );
       let offset_selector_y = new NumberBox(
         "offset_axes_y",
         "Y offset [mm]",
-        (this.nChY / 2) * this.posPitch
+        this.offsetY
       );
       let axes_switch_x = new Switch("switch_axes_x", "X in mm");
       let axes_switch_y = new Switch("switch_axes_y", "Y in mm");
@@ -343,24 +408,53 @@ class MainSectionGraphs {
           });
         } else {
           if ($(pitch_selector_x.getId(true)).val() == "") {
-            this.ntf.notify("No pitch selected", "w", 2);
+            th.ntf.notify("No pitch selected", "w", 2);
           } else {
-            axes_switch_x.switch_state();
-            let ptc = !isNaN(validateNumInput(pitch_selector_x.getId(true)))
-              ? validateNumInput(pitch_selector_x.getId(true))
-              : th.posResolution;
-            let off = !isNaN(validateNumInput(offset_selector_x.getId(true)))
-              ? validateNumInput(offset_selector_x.getId(true))
-              : ((th.nChX - 1) / 2) * th.posResolution;
-            th.graph_array_profiles_x.map((x) => {
-              x.change_x_axis(ptc, off);
-            });
+            if (
+              $(pitch_selector_x.getId(true)).val() != th.posPitch ||
+              $(offset_selector_x.getId(true)).val() != th.offsetX
+            ) {
+              th.ntf.confirm(
+                "Change X axis?",
+                "The values of pitch and offset you are applying do not correspond to the default native resolution and geometry of the sensors. Are you sure to apply these values?",
+                function () {
+                  axes_switch_x.switch_state();
+                  let ptc = !isNaN(
+                    validateNumInput(pitch_selector_x.getId(true))
+                  )
+                    ? validateNumInput(pitch_selector_x.getId(true))
+                    : th.posPitch;
+                  let off = !isNaN(
+                    validateNumInput(offset_selector_x.getId(true))
+                  )
+                    ? validateNumInput(offset_selector_x.getId(true))
+                    : th.offsetX;
+                  th.graph_array_profiles_x.map((x) => {
+                    x.change_x_axis(ptc, off);
+                  });
+                },
+                function () {
+                  return;
+                }
+              );
+            } else {
+              axes_switch_x.switch_state();
+              let ptc = !isNaN(validateNumInput(pitch_selector_x.getId(true)))
+                ? validateNumInput(pitch_selector_x.getId(true))
+                : th.posPitch;
+              let off = !isNaN(validateNumInput(offset_selector_x.getId(true)))
+                ? validateNumInput(offset_selector_x.getId(true))
+                : th.offsetX;
+              th.graph_array_profiles_x.map((x) => {
+                x.change_x_axis(ptc, off);
+              });
+            }
           }
         }
       });
       reset_default_x.addClickAction(function () {
-        pitch_selector_x.update(th.posResolution);
-        offset_selector_x.update(((th.nChX - 1) / 2) * th.posResolution);
+        pitch_selector_x.update(th.posPitch);
+        offset_selector_x.update(th.offsetX);
         if (axes_switch_x.getState()) {
           axes_switch_x.switch_state();
           th.graph_array_profiles_x.map((x) => {
@@ -384,7 +478,7 @@ class MainSectionGraphs {
       offset_selector_y.handlerEvent("change", function () {
         let value = !isNaN(validateNumInput(offset_selector_y.getId(true)))
           ? validateNumInput(offset_selector_y.getId(true))
-          : ((th.nChY - 1) / 2) * th.posPitch;
+          : th.offsetY;
         offset_selector_y.update(value);
       });
       axes_switch_y.handlerEvent("click", function () {
@@ -397,22 +491,51 @@ class MainSectionGraphs {
           if ($(pitch_selector_y.getId(true)).val() == "") {
             this.ntf.notify("No pitch selected", "w", 2);
           } else {
-            axes_switch_y.switch_state();
-            let ptc = !isNaN(validateNumInput(pitch_selector_y.getId(true)))
-              ? validateNumInput(pitch_selector_y.getId(true))
-              : th.posResolution;
-            let off = !isNaN(validateNumInput(offset_selector_y.getId(true)))
-              ? validateNumInput(offset_selector_y.getId(true))
-              : ((th.nChX - 1) / 2) * th.posResolution;
-            th.graph_array_profiles_y.map((x) => {
-              x.change_x_axis(ptc, off);
-            });
+            if (
+              $(pitch_selector_y.getId(true)).val() != th.posPitch ||
+              $(offset_selector_y.getId(true)).val() != th.offsetY
+            ) {
+              th.ntf.confirm(
+                "Change Y axis?",
+                "The values of pitch and offset you are applying do not correspond to the default native resolution and geometry of the sensors. Are you sure to apply these values?",
+                function () {
+                  axes_switch_y.switch_state();
+                  let ptc = !isNaN(
+                    validateNumInput(pitch_selector_y.getId(true))
+                  )
+                    ? validateNumInput(pitch_selector_y.getId(true))
+                    : th.posPitch;
+                  let off = !isNaN(
+                    validateNumInput(offset_selector_y.getId(true))
+                  )
+                    ? validateNumInput(offset_selector_y.getId(true))
+                    : th.offsetY;
+                  th.graph_array_profiles_y.map((x) => {
+                    x.change_x_axis(ptc, off);
+                  });
+                },
+                function () {
+                  return;
+                }
+              );
+            } else {
+              axes_switch_y.switch_state();
+              let ptc = !isNaN(validateNumInput(pitch_selector_y.getId(true)))
+                ? validateNumInput(pitch_selector_y.getId(true))
+                : th.posPitch;
+              let off = !isNaN(validateNumInput(offset_selector_y.getId(true)))
+                ? validateNumInput(offset_selector_y.getId(true))
+                : th.offsetY;
+              th.graph_array_profiles_y.map((x) => {
+                x.change_x_axis(ptc, off);
+              });
+            }
           }
         }
       });
       reset_default_y.addClickAction(function () {
-        pitch_selector_y.update(th.posResolution);
-        offset_selector_y.update(((th.nChY - 1) / 2) * th.posResolution);
+        pitch_selector_y.update(th.posPitch);
+        offset_selector_y.update(th.offsetY);
         if (axes_switch_y.getState()) {
           axes_switch_y.switch_state();
           th.graph_array_profiles_y.map((x) => {
@@ -886,63 +1009,6 @@ class MainSectionGraphs {
         th.components.graphs.posGraphs.pos2DprojY.reset2Dzoom();
       });
     }
-    //only LightQ
-    let HIanode_switch = new Switch(
-      "switch_HI_anode",
-      "L1 (STD)/L2 (DBL)",
-      false,
-      "el-doubleSwitch-style"
-    );
-    let high_low_switch = new Switch(
-      "switch_high_low",
-      "low/high",
-      false,
-      "el-doubleSwitch-style"
-    );
-    let sum_strips_switch = new Switch("switch_sum_strips", "sum strips?");
-    this.components.controls.shared.HIanode_switch = HIanode_switch;
-    this.components.controls.shared.high_low_switch = high_low_switch;
-    this.components.controls.shared.sum_strips_switch = sum_strips_switch;
-    HIanode_switch.handlerEvent("click", function () {
-      if (HIanode_switch.getState()) {
-        HIanode_switch.switch_state();
-        high_low_switch.set_state(false);
-        sum_strips_switch.set_state(false);
-        high_low_switch.hide();
-        sum_strips_switch.hide();
-        th.setupProfilesAxis(false);
-        th.ws.send("set_HIanode", "false");
-      } else {
-        high_low_switch.show();
-        sum_strips_switch.show();
-        HIanode_switch.switch_state();
-        th.setupProfilesAxis(true);
-        th.ws.send("set_HIanode", "true");
-      }
-      th.configurePlots(HIanode_switch, high_low_switch, sum_strips_switch);
-    });
-    high_low_switch.handlerEvent("click", function () {
-      if (high_low_switch.getState()) {
-        high_low_switch.switch_state();
-        th.ws.send("set_high-low", "false");
-      } else {
-        high_low_switch.switch_state();
-        th.ws.send("set_high-low", "true");
-      }
-      th.configurePlots(HIanode_switch, high_low_switch, sum_strips_switch);
-    });
-    sum_strips_switch.handlerEvent("click", function () {
-      if (sum_strips_switch.getState()) {
-        sum_strips_switch.switch_state();
-        high_low_switch.enable();
-        th.ws.send("set_sum_strips", "false");
-      } else {
-        sum_strips_switch.switch_state();
-        high_low_switch.disable();
-        th.ws.send("set_sum_strips", "true");
-      }
-      th.configurePlots(HIanode_switch, high_low_switch, sum_strips_switch);
-    });
   }
   configurePlots(HIsw, hlsw, sumsw) {
     this.graph_array_profiles_x.forEach((x) => {

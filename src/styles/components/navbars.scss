@@ -53,16 +53,19 @@
 
 #device_menu .navbar-collapse .navbar-nav .nav-item .nav-link {
   color: $hiQ_gray;
+  // color: $hiQ_gray_hover;
   font-weight: bold;
 }
 
 #device_menu .navbar-collapse .navbar-nav .nav-item .nav-link:hover {
   color: $hiQ_gray_hover;
+  // color: white;
   cursor: pointer;
 }
 
 #device_menu .navbar-collapse .navbar-nav .nav-item .nav-link.active {
   color: $hiQ_gray_hover;
+  // color: white;
 }
 
 .nav-tabs .nav-item {
